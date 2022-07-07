@@ -1,14 +1,14 @@
 import requests
-from Operations.Spreadsheet import SpreadsheetApi
-from Common.Library import LibraryApi
-from Enterprise.Twin  import DigitalTwinApi
-from Shared.Constants import *
+from operations.spreadsheet import SpreadsheetApi
+from common.library import LibraryApi
+from enterprise.twin  import DigitalTwinApi
+from shared.constants import *
 from datetime import time
 import json
 
 
 
-from Enterprise.Authentication import AuthenticationApi
+from enterprise.authentication import AuthenticationApi
 
 class ClientSdk:
 	def __init__(self, env):

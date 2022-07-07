@@ -1,7 +1,7 @@
 import requests
 import json
 from enterprise.authentication import AuthenticationApi
-from Shared.Helpers.ProtobufHelper import DeserializeResponse
+from shared.helpers.protobuf import DeserializeResponse
 
 
 class CoreApi:
