@@ -3,6 +3,8 @@ import json
 
 from datetime import time
 
+from Shared.Helpers.ProtobufHelper import DeserializeResponse
+
 class AuthenticationApi:
 	def __init__(self, env):
 		self.Environment =env
@@ -20,3 +22,9 @@ class AuthenticationApi:
 		self.Password = password
 		self.Token = "Bearer "+ responseJson['access_token']
 		return True#, "Successfully authenticated, token value is :" +responseJson['access_token']+ " and can be accessed looking using the client's Auth.Token field"
+
+	def getUserInfo(self):
+		headers = {'Accept': 'application/json', "Authorization": self.Token}
+		url = self.Environment+"/connect/userinfo"
+		response= requests.get(url, headers=headers)	  
+		return response.content

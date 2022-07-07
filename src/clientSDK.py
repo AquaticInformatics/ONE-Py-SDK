@@ -1,13 +1,13 @@
 import requests
-from operations.spreadsheet import SpreadsheetApi
-from common.library import LibraryApi
-from shared.constants import *
+from Operations.Spreadsheet import SpreadsheetApi
+from Common.Library import LibraryApi
+from Shared.Constants import *
 from datetime import time
 import json
-from enterprise.twin import DigitalTwinApi
+from Enterprise.Twin  import DigitalTwinApi
 
 
-from enterprise.authentication import AuthenticationApi
+from Enterprise.Authentication import AuthenticationApi
 
 class ClientSdk:
 	def __init__(self, env):
@@ -15,10 +15,10 @@ class ClientSdk:
 		self.Initialize()
 	
 	def Initialize(self):
-		self.Auth= AuthenticationApi(self.Environment)
-		self.Twin = DigitalTwinApi(self.Environment, self.Auth)
-		self.Spreadsheet = SpreadsheetApi(self.Environment, self.Auth)
-		self.Library = LibraryApi(self.Environment, self.Auth)
+		self.Authentication= AuthenticationApi(self.Environment)
+		self.DigitalTwins = DigitalTwinApi(self.Environment, self.Authentication)
+		self.Spreadsheet = SpreadsheetApi(self.Environment, self.Authentication)
+		self.Library = LibraryApi(self.Environment, self.Authentication)
   
 
   
