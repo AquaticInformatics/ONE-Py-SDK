@@ -9,9 +9,9 @@ class SpreadsheetApi:
         self.Auth = auth
         self.AppUrl ="/operations/spreadsheet/v1/"
     
-    def getColumnIdsForWorksheet(self, plantId, wsType):
+    def GetColumnIdsForWorksheet(self, plantId, wsType):
         url = self.Environment + self.AppUrl + plantId + "/worksheet/"+str(wsType)+"/definition"
-        headers = {'Authorization': self.Auth.Token, "Accept":"application/x-protobuf"}
+        headers = {'Authorization': self.Auth.Token.access_token, "Accept":"application/x-protobuf"}
         response =DeserializeResponse(requests.get(url, headers=headers))        
         columnIds = [col.columnId for col in response.content.worksheetDefinitions.items[0].columns if  col.isActive==True]        
         return columnIds

@@ -8,31 +8,33 @@ class DigitalTwinApi:
     def __init__(self, env, auth:AuthenticationApi):
         self.AppUrl = "/enterprise/twin/v1/"
         self.Environment = env
-        self.Auth = auth       
+        self.Authentication = auth       
         
-    def getTwinByRefId(self, twinRefId):
+    def GetTwinByRefId(self, twinRefId):
         url = self.Environment+self.AppUrl+"DigitalTwin/Ref/"+twinRefId        
-        headers = {'Authorization': self.Auth.Token, "Accept": "application/x-protobuf"}
+        headers = {'Authorization': self.Authentication.Token.access_token, "Accept": "application/x-protobuf"}
         response = DeserializeResponse(requests.get(url, headers=headers))        
         return response.content.DigitalTwins.items
     
-    def getTwinMeasurementsByRefId(self, twinRefId):
+    def GetTwinMeasurementsByRefId(self, twinRefId):
         url = self.Environment+self.AppUrl+"DigitalTwin/Ref/"+twinRefId        
-        headers = {'Authorization': self.Auth.Token, "Accept":"application/x-protobuf"}
+        headers = {'Authorization': self.Authentication.Token.access_token, "Accept":"application/x-protobuf"}
         response = DeserializeResponse(requests.get(url, headers=headers))              
-        twinMeasurements= json.loads(response.content.DigitalTwins.items[0].twinData.value).get('measurement')                                   
+        return json.loads(response.content.DigitalTwins.items[0].twinData.value).get('measurement')      
+    
+    def TwinMeasurements(self, twinRefId, twinMeasurements):
         try:         
              usefulDictionary ={"Telemetry Id": twinRefId,
                             "Value": twinMeasurements['value'], 
                             "String Value": twinMeasurements['stringValue'],
-                            "Timestamp": twinMeasurements['timestamp'].get('jsonDateTime')}
-                            #"TelemetryPath": self.findTelemetryPath(twinRefId)}
+                            "Timestamp": twinMeasurements['timestamp'].get('jsonDateTime'),
+                            "TelemetryPath": self.findTelemetryPath(twinRefId)}
              return usefulDictionary
         except (TypeError):
              return ("No twin data found for "+twinRefId)       
         
     
-    def getDescendantsByRef(self, twinRefId:str):
+    def GetDescendantsByRef(self, twinRefId:str):
         pass
     
     def findTelemetryPath(self, twinRefId):
@@ -40,7 +42,7 @@ class DigitalTwinApi:
         twinPath=[]        
         while (True):
             url = self.Environment+self.AppUrl+"DigitalTwin/Ref/"+str(twinRefId)                         
-            headers = {'Authorization': self.Auth.Token, "Accept":"application/x-protobuf"}
+            headers = {'Authorization': self.Authentication.Token.access_token, "Accept":"application/x-protobuf"}
             response = DeserializeResponse(requests.get(url, headers=headers))
             if (response.statusCode!=200):
                 break                                                                          

@@ -6,16 +6,17 @@ from enterprise.authentication import AuthenticationApi
 import uuid
 
 client =ClientSdk(env.get("feature"))
-if (client.Authentication.GetToken("", "")): #Supply username and password here
+if (client.Authentication.GetToken("dfeature", "Password3637**")): #Supply username and password here
     print("Authenticated successfully")
 else:
     print("Authentication failed")
+client.Authentication.UserName
 print (client.Authentication.GetUserInfo())
-client.DigitalTwin.getTwinMeasurementsByRefId("")
-ids =client.Spreadsheet.getColumnIdsForWorksheet("", 4) #Supply plant Id and WSStype here
+
+ids =client.Spreadsheet.GetColumnIdsForWorksheet("", 4) #Supply plant Id and WSStype here
 test = client.DigitalTwin.findTelemetryPath(ids[4])
 print(test)
-twinDatas = [client.DigitalTwin.getTwinMeasurementsByRefId(id) for id in ids]
+twinDatas = [client.DigitalTwin.GetTwinMeasurementsByRefId(id) for id in ids]
 print(twinDatas)
 paths = [client.DigitalTwin.findTelemetryPath(id) for id in ids]
 print(paths)

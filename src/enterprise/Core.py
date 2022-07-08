@@ -8,6 +8,6 @@ class CoreApi:
     def __init__(self, env, auth:AuthenticationApi):
         self.AppUrl = "/enterprise/core/v1/"
         self.Environment = env
-        self.Auth = auth
+        self.Authentication = auth
     
     

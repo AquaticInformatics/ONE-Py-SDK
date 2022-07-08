@@ -1,10 +1,17 @@
-from one_interfaces import *
+from one_interfaces import apierror_pb2 as apiError
 from one_interfaces import apiresponse_pb2 as apiResponse
+import google
 
-def DeserializeResponse(response):        
-      pbResponse = apiResponse.ApiResponse()         
-      pbResponse.ParseFromString(response.content)                 
-      return pbResponse
+def DeserializeResponse(response):                
+      try:
+            pbResponse = apiResponse.ApiResponse()             
+            print(pbResponse.ParseFromString(response.content))                             
+            return pbResponse
+      except(google.protobuf.message.DecodeError):
+            pass
+     
+     
+            
     
       
     
