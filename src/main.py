@@ -4,9 +4,10 @@ from enterprise.twin import DigitalTwinApi
 from shared.constants import env 
 from enterprise.authentication import AuthenticationApi
 import uuid
+from shared.creds import *
 
 client =ClientSdk(env.get("feature"))
-if (client.Authentication.GetToken("dfeature", "Password3637**")): #Supply username and password here
+if (client.Authentication.GetToken(userName, password)): #Supply username and password here
     print("Authenticated successfully")
 else:
     print("Authentication failed")
