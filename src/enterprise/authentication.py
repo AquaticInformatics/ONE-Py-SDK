@@ -3,6 +3,7 @@ import json
 from datetime import datetime, time, timedelta
 from shared.helpers.protobuf import DeserializeResponse
 from one_interfaces import user_pb2 as User
+import google
  
 class AuthenticationApi:
 	def __init__(self, env):
@@ -10,7 +11,7 @@ class AuthenticationApi:
 		self.Token = Token()
 		self.UserName = ""
 		self.Password = ""
-		self.User:User 
+		self.User:User =User.User()
 		self.IsAuthenticated =False
 	         
 
@@ -31,13 +32,19 @@ class AuthenticationApi:
 		token.scope = responseJson['scope']
 		token.access_token = token.token_type+" "+ responseJson['access_token']		
 		token.expires_in =token.created +timedelta(seconds = responseJson['expires_in'])
-		self.Token =token  
+		self.Token =token  		
 		return True
 
 	def GetUserInfo(self):
-		headers = {'Accept': 'application/x-protobuf', "Authorization": self.Token.access_token}
+		headers = {'Accept': 'application/json', "Authorization": self.Token.access_token}
 		url = self.Environment+"/connect/userinfo"
 		response= requests.get(url, headers=headers)
+		print(response.content)
+		user = User.User()
+		jResponse = json.loads(response.content)	
+		#user.firstName.value=jResponse.get('givenName')
+
+		#self.User.CopyFrom(response.content.Users.items[0])
 
 		return response.content
 
@@ -48,3 +55,5 @@ class Token:
         self.token_type:str
         self.scope:str
         self.created:datetime
+    def __repr__(self):
+        return "Access token: %s, Created on: %s, Expires in: %s, Token Type: %s, Scope: %s  " %(self.access_token, self.created, self.expires_in, self.token_type, self.scope)

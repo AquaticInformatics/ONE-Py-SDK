@@ -1,5 +1,6 @@
 import requests
 import json
+from logging import Logger
 
 
 class LibraryApi:

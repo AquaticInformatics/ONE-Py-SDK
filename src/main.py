@@ -11,13 +11,14 @@ if (client.Authentication.GetToken("dfeature", "Password3637**")): #Supply usern
 else:
     print("Authentication failed")
 client.Authentication.UserName
+print(client.Authentication.Token)
 print (client.Authentication.GetUserInfo())
 
-ids =client.Spreadsheet.GetColumnIdsForWorksheet("", 4) #Supply plant Id and WSStype here
-test = client.DigitalTwin.findTelemetryPath(ids[4])
-print(test)
-twinDatas = [client.DigitalTwin.GetTwinMeasurementsByRefId(id) for id in ids]
-print(twinDatas)
-paths = [client.DigitalTwin.findTelemetryPath(id) for id in ids]
-print(paths)
+# ids =client.Spreadsheet.GetColumnIdsForWorksheet("", 4) #Supply plant Id and WSStype here
+# test = client.DigitalTwin.findTelemetryPath(ids[4])
+# print(test)
+# twinDatas = [client.DigitalTwin.GetTwinMeasurementsByRefId(id) for id in ids]
+# print(twinDatas)
+# paths = [client.DigitalTwin.findTelemetryPath(id) for id in ids]
+# print(paths)
 
