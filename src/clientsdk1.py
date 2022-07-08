@@ -7,7 +7,6 @@ from datetime import time
 import json
 
 
-
 from enterprise.authentication import AuthenticationApi
 
 class ClientSdk:
