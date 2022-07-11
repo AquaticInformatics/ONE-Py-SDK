@@ -1,7 +1,8 @@
 import requests
 import json
 from enterprise.authentication import AuthenticationApi
-from shared.helpers.protobuf import DeserializeResponse
+from shared.helpers.protobufhelper import DeserializeResponse
+from one_interfaces import user_pb2 as User
 
 
 class CoreApi:
@@ -10,4 +11,22 @@ class CoreApi:
         self.Environment = env
         self.Authentication = auth
     
+    def GetUser(self, userId, expand = None):
+        user = User.User()
+        if (expand!=None):
+            url = self.Environment+self.AppUrl+"User/"+userId+"expand="+expand
+        else:
+            url = self.Environment+self.AppUrl+"User/"+userId
+        headers = {'Authorization': self.Authentication.Token.access_token, "Accept":"application/x-protobuf"}
+        response = DeserializeResponse(requests.get(url, headers=headers))         
+        return response.content.users.items[0]
+        
+        
+        
     
+
+class UserHelper:
+    def GetUserFromUserInfo(userInfo):
+        jResponse = json.loads(userInfo.content)
+        
+        

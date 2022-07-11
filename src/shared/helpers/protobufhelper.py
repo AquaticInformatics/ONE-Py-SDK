@@ -6,7 +6,7 @@ import logging
 def DeserializeResponse(response):                
       try:
             pbResponse = apiResponse.ApiResponse()             
-            print(pbResponse.ParseFromString(response.content))                             
+            pbResponse.ParseFromString(response.content)
             return pbResponse
       except  Exception as Argument:
             logging.exception("Error occured in deserialization process")

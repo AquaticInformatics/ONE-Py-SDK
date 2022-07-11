@@ -1,4 +1,5 @@
 import requests
+from enterprise.core import CoreApi
 from operations.spreadsheet import SpreadsheetApi
 from common.library import LibraryApi
 from enterprise.twin  import DigitalTwinApi
@@ -19,7 +20,15 @@ class ClientSdk:
 		self.DigitalTwin = DigitalTwinApi(self.Environment, self.Authentication)
 		self.Spreadsheet = SpreadsheetApi(self.Environment, self.Authentication)
 		self.Library = LibraryApi(self.Environment, self.Authentication)
-  
+		self.Core = CoreApi(self.Environment, self.Authentication)
+	
+	def LoadCurrentUser(self):
+		if not self.Authentication.IsAuthenticated:
+			print("Not authenticated. Authenticate and try again")
+		if(self.Authentication.User.id != None):
+			self.Authentication.GetUserInfo()
+			self.Authentication.User.CopyFrom(self.Core.GetUser(self.Authentication.User.id))
+
 
   
 

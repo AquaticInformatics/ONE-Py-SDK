@@ -1,6 +1,6 @@
 import requests
 from enterprise.authentication import AuthenticationApi
-from shared.helpers.protobuf import DeserializeResponse
+from shared.helpers.protobufhelper import DeserializeResponse
 
 
 class SpreadsheetApi:
