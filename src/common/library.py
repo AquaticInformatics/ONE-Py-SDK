@@ -1,19 +1,45 @@
 import requests
 import json
 from logging import Logger
+from shared.helpers.protobufhelper import DeserializeResponse
 
 
 class LibraryApi:
     def __init__(self, env, auth):
-        self.appUrl = "/common/library/v1"
-        self.environment = env
-        self.auth = auth
+        self.AppUrl = "/common/library/v1/"
+        self.Environment = env
+        self.Authentication = auth
     
-    def getUnit(self, unitId):
-        pass
+    def GetUnits(self):
+        url = self.Environment+self.AppUrl+"unit"     
+        headers = {'Authorization': self.Authentication.Token.access_token, "Accept": "application/x-protobuf"}
+        response = DeserializeResponse(requests.get(url, headers=headers))   
+        return response.content.units.items
     
     def getParameter(self, parameterId):
         pass
     
-    def getParameters(self):
-        pass
+    def GetParameters(self):
+        url = self.Environment+self.AppUrl+"parameter"     
+        headers = {'Authorization': self.Authentication.Token.access_token, "Accept": "application/x-protobuf"}
+        response = DeserializeResponse(requests.get(url, headers=headers))   
+        return response.content.parameters.items
+    
+    def GetQuantityTypes(self):
+        url = self.Environment+self.AppUrl+"quantityType"     
+        headers = {'Authorization': self.Authentication.Token.access_token, "Accept": "application/x-protobuf"}
+        response = DeserializeResponse(requests.get(url, headers=headers))   
+        return response.content.quantityTypes.items
+    
+    def Geti18nKeys(self, language:str, modules:str):
+        url = self.Environment+self.AppUrl+"i18n"  
+        if (language and modules):
+            url = url+"?modulecsv="+modules+"&lang="+language       
+        elif (modules):
+            url = url+"?modulecsv="+modules   
+        else:
+            return print("Modules is a required parameter")     
+        headers = {'Authorization': self.Authentication.Token.access_token, "Accept": "application/json"}
+        response = requests.get(url, headers=headers)
+        jResponse= json.loads(response.content)
+        return jResponse.get("FM")
