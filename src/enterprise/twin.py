@@ -47,9 +47,17 @@ class DigitalTwinApi:
         headers = {'Authorization': self.Authentication.Token.access_token, "Accept": "application/x-protobuf"}
         response = DeserializeResponse(requests.get(url, headers=headers))   
         return response.content.digitalTwinSubtypes.items
+    
     def GetDescendantsByType(self, twinRefId:str, twinTypeId:str):
         requestId =uuid.uuid4()
         url = self.Environment+self.AppUrl+"DigitalTwin/Ref/"+twinRefId+"/Type/"+twinTypeId+"/Descendants?requestId="+str(requestId)        
+        headers = {'Authorization': self.Authentication.Token.access_token, "Accept": "application/x-protobuf"}
+        response = DeserializeResponse(requests.get(url, headers=headers))        
+        return response.content.DigitalTwins.items
+    
+    def GetDescendantsBySubType(self, twinRefId:str, twinSubtypeId:str):
+        requestId =uuid.uuid4()
+        url = self.Environment+self.AppUrl+"DigitalTwin/Ref/"+twinRefId+"/Subtype/"+twinSubtypeId+"/Descendants?requestId="+str(requestId)        
         headers = {'Authorization': self.Authentication.Token.access_token, "Accept": "application/x-protobuf"}
         response = DeserializeResponse(requests.get(url, headers=headers))        
         return response.content.DigitalTwins.items
