@@ -5,7 +5,7 @@ import logging
 
 def DeserializeResponse(response):                
       try:
-            pbResponse = apiResponse.ApiResponse()             
+            pbResponse = apiResponse.ApiResponse()                                    
             pbResponse.ParseFromString(response.content)
             return pbResponse
       except  Exception as Argument:

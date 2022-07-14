@@ -1,5 +1,6 @@
 import requests
 from enterprise.core import CoreApi
+from historian.data import HistorianAPI
 from operations.spreadsheet import SpreadsheetApi
 from common.library import LibraryApi
 from enterprise.twin  import DigitalTwinApi
@@ -9,6 +10,7 @@ import json
 
 
 from enterprise.authentication import AuthenticationApi
+from shared.helpers.csvhelper import Exporter
 
 class ClientSdk:
 	def __init__(self, env):
@@ -21,6 +23,8 @@ class ClientSdk:
 		self.Spreadsheet = SpreadsheetApi(self.Environment, self.Authentication)
 		self.Library = LibraryApi(self.Environment, self.Authentication)
 		self.Core = CoreApi(self.Environment, self.Authentication)
+		self.Historian = HistorianAPI(self.Environment, self.Authentication)
+		self.Exporter = Exporter(self.Environment, self.Authentication)
 	
 	def LoadCurrentUser(self):
 		if not self.Authentication.IsAuthenticated:
