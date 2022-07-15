@@ -13,7 +13,7 @@ from enterprise.authentication import AuthenticationApi
 from shared.helpers.csvhelper import Exporter
 
 class ClientSdk:
-	def __init__(self, env):
+	def __init__(self, env="https://api-us.aquaticinformatics.net/"):
 		self.Environment = env
 		self.Initialize()
 	
