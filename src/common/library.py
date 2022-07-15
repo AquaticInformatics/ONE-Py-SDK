@@ -31,7 +31,7 @@ class LibraryApi:
         response = DeserializeResponse(requests.get(url, headers=headers))   
         return response.content.quantityTypes.items
     
-    def Geti18nKeys(self, language:str, modules:str):
+    def Geti18nKeys(self,  modules:str, language:str="en",):
         url = self.Environment+self.AppUrl+"i18n"  
         if (language and modules):
             url = url+"?modulecsv="+modules+"&lang="+language       
