@@ -26,7 +26,11 @@ class Exporter:
                         wsVal="Four Hour"                                  
                     elif wsType == 4:
                         wsVal ="Daily"
-                    ws=self.Spreadsheet.GetWorksheetDefinition(plantId, wsType)[0]  
+                    wsd=self.Spreadsheet.GetWorksheetDefinition(plantId, wsType)                    
+                    try:
+                        ws=wsd[0] 
+                    except:
+                        continue
                     
                     if not ws.columns:
                         continue
@@ -65,8 +69,10 @@ class Exporter:
                     wsVal="Four Hour"                                  
                 elif wsType == 4:
                     wsVal ="Daily"
-                
-                ws=self.Spreadsheet.GetWorksheetDefinition(plantId, wsType)[0]                              
+                try:
+                    ws=self.Spreadsheet.GetWorksheetDefinition(plantId, wsType)[0]                              
+                except:
+                    continue
                 if not ws.columns:
                     continue
                 numberMapping = {}
