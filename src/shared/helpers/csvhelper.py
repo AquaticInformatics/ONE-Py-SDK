@@ -17,7 +17,7 @@ class Exporter:
            
     def ExportWorksheet(self, filename, plantId, startDate, endDate):               
             with open(filename, mode='w', newline='') as file:        
-                fieldnames = ['Worksheet Type', 'Time', 'ColumnName','RowNumber', 'Value', 'StringValue', 'DateEntered']                
+                fieldnames = ['Worksheet Type', 'Time', 'ColumnName','ColumnId','RowNumber', 'Value', 'StringValue', 'DateEntered']                
                 worksheetWriter =csv.DictWriter(file,fieldnames=fieldnames)
                 worksheetWriter.writeheader()
                 wsTypes = range(1,5)
@@ -49,11 +49,11 @@ class Exporter:
                     columnNames = [col.name for col in ws.columns]
                     numberMapping = {}
                     for column in ws.columns:
-                        numberMapping[column.columnNumber] = column.name  
+                        numberMapping[column.columnNumber] = [column.name, column.columnId]  
                     for vals in rows.values():            
                         for cell in vals.cells:                        
                             try:                    
-                                worksheetWriter.writerow({'Worksheet Type': wsVal, 'Time': rowDict[vals.rowNumber],'ColumnName':numberMapping[cell.columnNumber], 'Value': (cell.cellDatas[0].value.value),
+                                worksheetWriter.writerow({'Worksheet Type': wsVal, 'Time': rowDict[vals.rowNumber],'ColumnName':numberMapping[cell.columnNumber][0], 'ColumnId':numberMapping[cell.columnNumber][1],'Value': (cell.cellDatas[0].value.value),
                                                         'RowNumber':vals.rowNumber, 'StringValue':cell.cellDatas[0].stringValue.value, 
                                                         'DateEntered':cell.cellDatas[0].auditEvents[-1].timeStamp.jsonDateTime.value})
                             except(IndexError):
@@ -71,7 +71,7 @@ class Exporter:
             else:
                 return print("Enter valid worksheet type value (1= Fifteen minute, 2=Hourly, 3=FourHour, 4=Daily)")   
             with open(filename, mode='w', newline='') as file:        
-                fieldnames = ['Worksheet Type', 'Time', 'ColumnName','RowNumber', 'Value', 'StringValue', 'DateEntered']                
+                fieldnames = ['Worksheet Type', 'Time', 'ColumnName','ColumnId','RowNumber', 'Value', 'StringValue', 'DateEntered']                
                 worksheetWriter =csv.DictWriter(file,fieldnames=fieldnames)
                 worksheetWriter.writeheader()
             
@@ -95,11 +95,11 @@ class Exporter:
                 columnNames = [col.name for col in ws.columns]
                 numberMapping = {}
                 for column in ws.columns:
-                    numberMapping[column.columnNumber] = column.name  
+                    numberMapping[column.columnNumber] = [column.name, column.columnId]
                 for vals in rows.values():            
                     for cell in vals.cells:                        
                         try:                    
-                            worksheetWriter.writerow({'Worksheet Type': wsVal, 'Time': rowDict[vals.rowNumber],'ColumnName':numberMapping[cell.columnNumber], 'Value': (cell.cellDatas[0].value.value),
+                            worksheetWriter.writerow({'Worksheet Type': wsVal, 'Time': rowDict[vals.rowNumber],'ColumnName':numberMapping[cell.columnNumber][0],  'ColumnId':numberMapping[cell.columnNumber][1], 'Value': (cell.cellDatas[0].value.value),
                                                     'RowNumber':vals.rowNumber, 'StringValue':cell.cellDatas[0].stringValue.value, 
                                                     'DateEntered':cell.cellDatas[0].auditEvents[-1].timeStamp.jsonDateTime.value})
                         except(IndexError):
