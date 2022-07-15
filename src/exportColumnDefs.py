@@ -4,7 +4,7 @@ from shared.constants import Environment
 from shared.creds import userName, password
 from shared.helpers.csvhelper import *
 
-client =ClientSdk(Environment.get("feature"))
+client =ClientSdk()
 if (client.Authentication.GetToken(userName, password)):  # Supply username and password here
     print("Authenticated successfully")
 else:
