@@ -5,7 +5,7 @@ from enterprise.authentication import AuthenticationApi
 from shared.helpers.protobufhelper import DeserializeResponse
 from one_interfaces import historian_data_pb2 as Historian 
 
-class HistorianAPI:
+class HistorianApi:
     def __init__(self, env, auth:AuthenticationApi):
         self.Environment =env
         self.Authentication = auth

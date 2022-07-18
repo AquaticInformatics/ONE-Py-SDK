@@ -1,7 +1,5 @@
 import csv
 import json
-from one_interfaces import worksheet_definition_pb2 as wsDef
-from one_interfaces import row_pb2 as Row
 from operations.spreadsheet import SpreadsheetApi
 from common.library import LibraryApi
 from enterprise.twin import DigitalTwinApi
@@ -15,174 +13,114 @@ class Exporter:
         self.Library = LibraryApi(env, auth)
         self.DigitalTwin = DigitalTwinApi(env, auth)
            
-    def ExportWorksheet(self, filename, plantId, startDate, endDate):               
-            with open(filename, mode='w', newline='') as file:        
-                fieldnames = ['Worksheet Type', 'Time', 'ColumnName','ColumnId','RowNumber', 'Value', 'StringValue', 'DateEntered']                
-                worksheetWriter =csv.DictWriter(file,fieldnames=fieldnames)
-                worksheetWriter.writeheader()
+    def ExportWorksheet(self, filename, plantId, startDate, endDate, wsType=None): 
+        with open(filename, mode='w', newline='', encoding="utf-8") as file:        
+            fieldnames = ['Worksheet Type', 'Time', 'ColumnName','ColumnId','RowNumber', 'Value', 'StringValue', 'DateEntered']                
+            worksheetWriter =csv.DictWriter(file,fieldnames=fieldnames)
+            worksheetWriter.writeheader()
+            if not wsType:                    
                 wsTypes = range(1,5)
                 for wsType in wsTypes:
-                    if wsType ==1:
-                        wsVal="Fifteen Minute"
-                    elif wsType ==2:
-                        wsVal="Hourly"   
-                    elif wsType ==3:
-                        wsVal="Four Hour"                                  
-                    elif wsType == 4:
-                        wsVal ="Daily"                    
-                    try:
-                        ws=self.Spreadsheet.GetWorksheetDefinition(plantId, wsType)[0]                  
+                    try: 
+                         self.__mapAndWriteRowsAndColumns(worksheetWriter, plantId, wsType, startDate, endDate)                    
                     except:
+                        print("error")
                         continue                    
-                    if not ws.columns:
-                        continue
-                    rows =self.Spreadsheet.GetRowsForTimeRange(plantId, wsType, startDate, endDate)
-                    try:
-                        rowNumbers = rows.keys()
-                        rowValues = rows.values()  
-                    except(AttributeError):
-                        continue            
-                    
-                    rowDict ={}
-                    for num in rowNumbers:
-                        rowDict[num]= str(GetDateFromRowNumber(num, ws.enumWorksheet))
-                    columnNames = [col.name for col in ws.columns]
-                    numberMapping = {}
-                    for column in ws.columns:
-                        numberMapping[column.columnNumber] = [column.name, column.columnId]  
-                    for vals in rows.values():            
-                        for cell in vals.cells:                        
-                            try:                    
-                                worksheetWriter.writerow({'Worksheet Type': wsVal, 'Time': rowDict[vals.rowNumber],'ColumnName':numberMapping[cell.columnNumber][0], 'ColumnId':numberMapping[cell.columnNumber][1],'Value': (cell.cellDatas[0].value.value),
-                                                        'RowNumber':vals.rowNumber, 'StringValue':cell.cellDatas[0].stringValue.value, 
-                                                        'DateEntered':cell.cellDatas[0].auditEvents[-1].timeStamp.jsonDateTime.value})
-                            except(IndexError):
-                                pass                                                                         
-
-    def ExportWorksheetByType(self, filename, plantId, startDate, endDate, wsType=4):               
-            if wsType ==1:
-                    wsVal="Fifteen Minute"
-            elif wsType ==2:
-                wsVal="Hourly"   
-            elif wsType ==3:
-                wsVal="Four Hour"                                  
-            elif wsType == 4:
-                wsVal ="Daily" 
             else:
-                return print("Enter valid worksheet type value (1= Fifteen minute, 2=Hourly, 3=FourHour, 4=Daily)")   
-            with open(filename, mode='w', newline='') as file:        
+                self.__mapAndWriteRowsAndColumns(worksheetWriter, plantId, wsType, startDate, endDate)                                           
+    
+    def __mapAndWriteRowsAndColumns(self, worksheetWriter, plantId, wsType, startDate, endDate):
+        wsVal =self.ConvertWSTypeToStringValue(wsType)    
+        print(wsVal)                
+        try:
+            ws=self.Spreadsheet.GetWorksheetDefinition(plantId, wsType)[0]                  
+        except:
+            return print("No worksheet definition found")                  
+        if not ws.columns:
+            return print("No columns found")
+        rows =self.Spreadsheet.GetRowsForTimeRange(plantId, wsType, startDate, endDate)
+        try:
+            rowNumbers = rows.keys()
+            rowValues = rows.values()  
+        except(AttributeError):
+            return print("No rows found")            
+        print(rowValues)       
+        
+        rowDict ={}
+        for num in rowNumbers:
+            rowDict[num]= str(GetDateFromRowNumber(num, ws.enumWorksheet))
+        
+        numberMapping = {}
+        for column in ws.columns:
+            numberMapping[column.columnNumber] = [column.name, column.columnId]  
+        for vals in rows.values():            
+            for cell in vals.cells:                                                        
+                try: 
+                    worksheetWriter.writerow({'Worksheet Type': wsVal, 'Time': rowDict[vals.rowNumber],'ColumnName':numberMapping[cell.columnNumber][0],
+                                              'ColumnId':numberMapping[cell.columnNumber][1],'Value': (cell.cellDatas[0].value.value),
+                                            'RowNumber':vals.rowNumber, 'StringValue':cell.cellDatas[0].stringValue.value, 
+                                            'DateEntered':cell.cellDatas[0].auditEvents[-1].timeStamp.jsonDateTime.value})
+                except(IndexError):
+                    print (IndexError)
+                    pass
+                                                                    
+    def ExportWorksheetByType(self, filename, plantId, startDate, endDate, wsType=4):               
+            wsVal =self.ConvertWSTypeToStringValue(wsType)  
+            with open(filename, mode='w', newline='', encoding="utf-8") as file:        
                 fieldnames = ['Worksheet Type', 'Time', 'ColumnName','ColumnId','RowNumber', 'Value', 'StringValue', 'DateEntered']                
                 worksheetWriter =csv.DictWriter(file,fieldnames=fieldnames)
-                worksheetWriter.writeheader()
-            
-                            
-                try:
-                    ws=self.Spreadsheet.GetWorksheetDefinition(plantId, wsType)[0]                  
-                except:
-                    return print("No worksheet definition found")
-                if not ws.columns:
-                    return print("No columns found")
-                rows =self.Spreadsheet.GetRowsForTimeRange(plantId, wsType, startDate, endDate)
-                try:
-                    rowNumbers = rows.keys()
-                    rowValues = rows.values()  
-                except(AttributeError):
-                    return print("No rows found")            
-                
-                rowDict ={}
-                for num in rowNumbers:
-                    rowDict[num]= str(GetDateFromRowNumber(num, ws.enumWorksheet))
-                columnNames = [col.name for col in ws.columns]
-                numberMapping = {}
-                for column in ws.columns:
-                    numberMapping[column.columnNumber] = [column.name, column.columnId]
-                for vals in rows.values():            
-                    for cell in vals.cells:                        
-                        try:                    
-                            worksheetWriter.writerow({'Worksheet Type': wsVal, 'Time': rowDict[vals.rowNumber],'ColumnName':numberMapping[cell.columnNumber][0],  'ColumnId':numberMapping[cell.columnNumber][1], 'Value': (cell.cellDatas[0].value.value),
-                                                    'RowNumber':vals.rowNumber, 'StringValue':cell.cellDatas[0].stringValue.value, 
-                                                    'DateEntered':cell.cellDatas[0].auditEvents[-1].timeStamp.jsonDateTime.value})
-                        except(IndexError):
-                            pass                                                                         
+                worksheetWriter.writeheader()                                       
+                self.__mapAndWriteRowsAndColumns(worksheetWriter, plantId, wsType, startDate, endDate)
 
-    def ExportColumnDetails(self, filename, plantId): 
-        units = self.Library.GetUnits()  
-        parameters = self.Library.GetParameters()       
-        i18N = self.Library.Geti18nKeys("AQI_FOUNDATION_LIBRARY")[0].get("AQI_FOUNDATION_LIBRARY")
-        i18NUnits= i18N.get("UnitType").get("LONG")
-        i18NParams= i18N.get("Parameter").get("LONG")  
-     
-        paramDict = {}
-        for param in parameters:
-            try:
-                paramDict[param.IntId]= [param.i18nKey, i18NParams[param.i18nKey]]
-            except: 
-                paramDict[param.IntId]= [param.i18nKey, None]                     
-        unitDict = {}
-        for unit in units:
-            try:
-                unitDict[unit.IntId]= [unit.i18nKey, unit.unitName, i18NUnits[unit.i18nKey]]
-            except:
-                unitDict[unit.IntId]= [unit.i18nKey, unit.unitName, None]           
-        
-        with open(filename, mode='w', newline='') as file:
-            fieldnames = ['Worksheet Type','ColumnNumber', 'Name', 'ParameterId', 'ParameterI18NKey', 'Path', 'ParameterTranslation','ColumnId', 'UnitId', 'UnitName', 'UnitI18NKey','UnitTranslation','LastPopulatedRow' ]        
+    def ExportColumnDetails(self, filename, plantId, wsType =None):                    
+        unitDict, paramDict = self.__mapUnitsAndParams()
+        with open(filename, mode='w', newline='', encoding="utf-8") as file:
+            fieldnames = ['Worksheet Type','ColumnNumber', 'Name', 'ParameterId', 'Path', 'ParameterTranslation','ColumnId','LocationId', 'UnitId', 'UnitName','UnitTranslation','LastPopulatedDate', 'Limits' ]        
             worksheetWriter =csv.DictWriter(file, fieldnames=fieldnames)
             worksheetWriter.writeheader()
-            wsTypes = range(1,5)
-            for wsType in wsTypes:
-                if wsType ==1:
-                    wsVal="Fifteen Minute"
-                elif wsType ==2:
-                    wsVal="Hourly"   
-                elif wsType ==3:
-                    wsVal="Four Hour"                                  
-                elif wsType ==4:
-                    wsVal ="Daily"
-                try:
-                    ws=self.Spreadsheet.GetWorksheetDefinition(plantId, wsType)[0]                              
-                except:
-                    continue
-                if not ws.columns:
-                    continue                
-                columnDict = {}
-                for column in ws.columns:                    
-                    columnDict[column.columnNumber] = [column.name,  column.columnId, column.parameterId,  column.displayUnitId, column.lastRowNumberWithData]       
-                twinDict =self.PathFinder(plantId, columnDict)
-                for key in columnDict.keys():                    
-                    worksheetWriter.writerow({ 'ColumnNumber': key, 'Name':columnDict[key][0], 'ColumnId': columnDict[key][1], 'Worksheet Type':wsVal,
-                                                'ParameterId':columnDict[key][2],'UnitId': columnDict[key][3],  'LastPopulatedRow': columnDict[key][4],
-                                                'UnitName': unitDict[columnDict[key][3]][1], "UnitI18NKey":unitDict[columnDict[key][3]][0],'UnitTranslation':unitDict[columnDict[key][3]][2],
-                                                'ParameterI18NKey': paramDict[columnDict[key][2]][0], 'ParameterTranslation':paramDict[columnDict[key][2]][1], "Path": twinDict[columnDict[key][1]][2]                                               
-                                                })
+            if not wsType:
+                wsTypes = range(1,5)
+                for wsType in wsTypes:
+                    try:
+                        self.__mapAndWriteColumns(plantId, wsType, unitDict, paramDict, worksheetWriter)
+                    except: 
+                        continue
+            else: 
+                self.__mapAndWriteColumns(plantId, wsType, unitDict, paramDict, worksheetWriter)
+              
     
-    def ExportColumnDetailsByType(self, filename, plantId, wsType=4):         
-        if wsType ==1:
-            wsVal="Fifteen Minute"
-        elif wsType ==2:
-            wsVal="Hourly"   
-        elif wsType ==3:
-            wsVal="Four Hour"                                  
-        elif wsType ==4:
-            wsVal ="Daily"
-        else: 
-             return print("Enter valid worksheet type value (1= Fifteen minute, 2=Hourly, 3=FourHour, 4=Daily)") 
+    def __mapAndWriteColumns(self, plantId, wsType, unitDict, paramDict, worksheetWriter):
+        wsVal = self.ConvertWSTypeToStringValue(wsType)
         try:
             ws=self.Spreadsheet.GetWorksheetDefinition(plantId, wsType)[0]                              
         except:
             return print("No worksheet definition found")
         if not ws.columns:
             return print("No columns found")             
+        
         columnDict = {}
         for column in ws.columns:                    
-            columnDict[column.columnNumber] = [column.name,  column.columnId, column.parameterId,  column.displayUnitId, column.lastRowNumberWithData]       
+            columnDict[column.columnNumber] = [column.name,  column.columnId, column.parameterId,  column.displayUnitId, column.lastRowNumberWithData, column.locationId, column.limits]       
+        limitDict ={}
+        for column in columnDict.values():
+            for limit in column[6]:
+                limitDict[column[1]+limit.name]= [limit.name, limit.enumLimit, limit.lowValue.value, limit.highValue.value, limit.timeWindow.startTime.jsonDateTime.value, limit.timeWindow.endTime.jsonDateTime.value ]
+                print(limitDict[column[1]+limit.name])
         twinDict =self.PathFinder(plantId, columnDict)
+        for key in columnDict.keys():
+                                
+            worksheetWriter.writerow({ 'ColumnNumber': key, 'Name':columnDict[key][0], 'ColumnId': columnDict[key][1], 'Worksheet Type':wsVal,
+                                        'ParameterId':columnDict[key][2],'UnitId': columnDict[key][3],  'LastPopulatedDate': GetDateFromRowNumber(columnDict[key][4], wsType),
+                                        'UnitTranslation':unitDict[columnDict[key][3]][2],'LocationId':columnDict[key][5],
+                                            'ParameterTranslation':paramDict[columnDict[key][2]][1], "Path": twinDict[columnDict[key][1]][2],
+                                            'Limits' :  columnDict[key][6]                                             
+                                        })
+    def __mapUnitsAndParams(self):
         units = self.Library.GetUnits()  
         parameters = self.Library.GetParameters()       
         i18N = self.Library.Geti18nKeys("AQI_FOUNDATION_LIBRARY")[0].get("AQI_FOUNDATION_LIBRARY")
         i18NUnits= i18N.get("UnitType").get("LONG")
-        i18NParams= i18N.get("Parameter").get("LONG")  
-     
+        i18NParams= i18N.get("Parameter").get("LONG")       
         paramDict = {}
         for param in parameters:
             try:
@@ -194,20 +132,17 @@ class Exporter:
             try:
                 unitDict[unit.IntId]= [unit.i18nKey, unit.unitName, i18NUnits[unit.i18nKey]]
             except:
-                unitDict[unit.IntId]= [unit.i18nKey, unit.unitName, None]           
-        
-        with open(filename, mode='w', newline='') as file:
-            fieldnames = ['Worksheet Type','ColumnNumber', 'Name', 'ParameterId', 'ParameterI18NKey', 'Path', 'ParameterTranslation','ColumnId', 'UnitId', 'UnitName', 'UnitI18NKey','UnitTranslation','LastPopulatedRow' ]        
+                unitDict[unit.IntId]= [unit.i18nKey, unit.unitName, None]
+        return unitDict, paramDict
+    
+    def ExportColumnDetailsByType(self, filename, plantId, wsType=4):         
+        unitDict, paramDict = self.__mapUnitsAndParams()
+        with open(filename, mode='w', newline='', encoding="utf-8") as file:
+            fieldnames = ['Worksheet Type','ColumnNumber', 'Name', 'ParameterId', 'Path', 'ParameterTranslation','ColumnId','LocationId', 'UnitId', 'UnitName','UnitTranslation','LastPopulatedDate', 'Limits' ]        
             worksheetWriter =csv.DictWriter(file, fieldnames=fieldnames)
-            worksheetWriter.writeheader()        
-            for key in columnDict.keys():                    
-                worksheetWriter.writerow({ 'ColumnNumber': key, 'Name':columnDict[key][0], 'ColumnId': columnDict[key][1], 'Worksheet Type':wsVal,
-                                            'ParameterId':columnDict[key][2],'UnitId': columnDict[key][3],  'LastPopulatedRow': columnDict[key][4],
-                                            'UnitName': unitDict[columnDict[key][3]][1], "UnitI18NKey":unitDict[columnDict[key][3]][0],'UnitTranslation':unitDict[columnDict[key][3]][2],
-                                            'ParameterI18NKey': paramDict[columnDict[key][2]][0], 'ParameterTranslation':paramDict[columnDict[key][2]][1], "Path": twinDict[columnDict[key][1]][2]                                               
-                                            })
-    
-    
+            worksheetWriter.writeheader()
+            self.__mapAndWriteColumns(plantId, wsType, unitDict, paramDict, worksheetWriter)
+                             
     def PathFinder(self, plantId, columnDict):
         twins = self.DigitalTwin.GetDescendants(plantId)
         twinDict ={}
@@ -225,9 +160,20 @@ class Exporter:
                 pathString= f'{pathString}/{path.pop()}'
             twinDict[columnDict[key][1]][2]=pathString
         return twinDict
+    
+    def ConvertWSTypeToStringValue(self, wsType):
+        if wsType ==1:
+            return "Fifteen Minute"
+        elif wsType ==2:
+            return "Hourly"   
+        elif wsType ==3:
+            return "Four Hour"                                  
+        elif wsType ==4:
+            return "Daily"            
+        else: 
+             return print("Enter valid worksheet type value (1= Fifteen minute, 2=Hourly, 3=FourHour, 4=Daily)") 
                 
-                
-            
-        
+   
+          
             
         

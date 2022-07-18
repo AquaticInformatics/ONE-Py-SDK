@@ -1,6 +1,6 @@
 import requests
 from enterprise.core import CoreApi
-from historian.data import HistorianAPI
+from historian.data import HistorianApi
 from operations.spreadsheet import SpreadsheetApi
 from common.library import LibraryApi
 from enterprise.twin  import DigitalTwinApi
@@ -23,7 +23,7 @@ class ClientSdk:
 		self.Spreadsheet = SpreadsheetApi(self.Environment, self.Authentication)
 		self.Library = LibraryApi(self.Environment, self.Authentication)
 		self.Core = CoreApi(self.Environment, self.Authentication)
-		self.Historian = HistorianAPI(self.Environment, self.Authentication)
+		self.Historian = HistorianApi(self.Environment, self.Authentication)
 		self.Exporter = Exporter(self.Environment, self.Authentication)
 	
 	def LoadCurrentUser(self):
