@@ -4,7 +4,7 @@ import requests
 from enterprise.authentication import AuthenticationApi
 from shared.helpers.protobufhelper import DeserializeResponse
 from shared.helpers.datetimehelper import *
-
+from one_interfaces import row_pb2 as row
 class SpreadsheetApi:
     def __init__(self, env: str, auth: AuthenticationApi):
         self.Environment = env
@@ -86,6 +86,26 @@ class SpreadsheetApi:
             return response
         return response.content.rows.items
     
+             
+    def __getRows(self, plantId, wsType, startRow=None, endRow=None, columns=None, viewId=None):
+        if columns and viewId:
+            return print("Using both columns and viewId parameters together is not supported.")
+        requestId = uuid.uuid4()
+        url=f'{self.Environment}{self.AppUrl}{plantId}/worksheet/{str(wsType)}/rows?requestId={requestId}'
+        if startRow:
+            url=url+f'&startRow={startRow}'
+        if endRow:
+            url=url+f'&endRow={endRow}'
+        if columns:
+            url=url+f'&columns={columns}'
+        if viewId:
+            url=url+f'&viewId={viewId}'        
+        headers = {'Authorization': self.Auth.Token.access_token, "Accept":"application/x-protobuf"}
+        response =DeserializeResponse(requests.get(url, headers=headers)) 
+        if response.errors:            
+            return response
+        return response.content.rows
+    
     def GetRowsByDay(self, plantId, wsType, date:datetime, columns=None, viewId=None):
         if columns and viewId:
             return print("Using both columns and viewId parameters together is not supported.")
@@ -108,5 +128,11 @@ class SpreadsheetApi:
     
     def GetRowsForTimeRange(self, plantId, wsType, startDate:datetime, endDate:datetime):
         startRow =GetRowNumber(startDate, wsType)
-        endRow =GetRowNumber(endDate, wsType)
-        return self.GetRows(plantId, wsType, startRow, endRow)
+        endRow =GetRowNumber(endDate, wsType)       
+        rows = row.Rows()
+        while endRow -startRow>5000:            
+            newEndRow = startRow+5000            
+            rows.MergeFrom(self.__getRows(plantId, wsType, startRow, newEndRow))
+            startRow = newEndRow+1                
+        rows.MergeFrom(self.__getRows(plantId, wsType, startRow, endRow))       
+        return rows.items
