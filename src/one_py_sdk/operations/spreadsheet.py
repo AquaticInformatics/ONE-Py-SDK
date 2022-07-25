@@ -1,9 +1,9 @@
 from datetime import datetime
 import uuid
 import requests
-from enterprise.authentication import AuthenticationApi
-from shared.helpers.protobufhelper import DeserializeResponse
-from shared.helpers.datetimehelper import *
+from one_py_sdk.enterprise.authentication import AuthenticationApi
+from one_py_sdk.shared.helpers.protobufhelper import DeserializeResponse
+from one_py_sdk.shared.helpers.datetimehelper import *
 from one_interfaces import row_pb2 as row
 class SpreadsheetApi:
     def __init__(self, env: str, auth: AuthenticationApi):

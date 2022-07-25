@@ -1,7 +1,7 @@
 import requests
 import json
 from logging import Logger
-from shared.helpers.protobufhelper import DeserializeResponse
+from one_py_sdk.shared.helpers.protobufhelper import DeserializeResponse
 
 
 class LibraryApi:

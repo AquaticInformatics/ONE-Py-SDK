@@ -1,9 +1,9 @@
 import csv
 import json
-from operations.spreadsheet import SpreadsheetApi
-from common.library import LibraryApi
-from enterprise.twin import DigitalTwinApi
-from shared.helpers.datetimehelper import *
+from one_py_sdk.operations.spreadsheet import SpreadsheetApi
+from one_py_sdk.common.library import LibraryApi
+from one_py_sdk.enterprise.twin import DigitalTwinApi
+from one_py_sdk.shared.helpers.datetimehelper import *
 from datetime import datetime, timezone
 
 class Exporter:
@@ -82,23 +82,39 @@ class Exporter:
                 self.__mapAndWriteRowsAndColumns(worksheetWriter, plantId, wsType, startDate, endDate, updatedAfter)
 
     def ExportColumnDetails(self, filename, plantId, wsType =None):                    
-        unitDict, paramDict = self.__mapUnitsAndParams()
+        unitDict, paramDict,typeDict, subtypeDict = self.__mapUnitsAndParams()
         with open(filename, mode='w', newline='', encoding="utf-8") as file:
-            fieldnames = ['Worksheet Type','ColumnNumber', 'Name', 'ParameterId','LocationId','LocationName', 'Path', 'ParameterTranslation','ColumnId', 'UnitId', 'UnitTranslation','LastPopulatedDate', 'LimitName',"LowValue", "LowOperation", "HighValue", "HighOperation", "LimitStartTime", "LimitEndTime" ]        
+            fieldnames = ['Worksheet Type','ColumnNumber', 'Name', 'ParameterId','LocationId','LocationName','LocationType', 'LocationSubtype', 'Path', 'ParameterTranslation','ColumnId', 'UnitId', 'UnitTranslation','LastPopulatedDate', 'LimitName',"LowValue", "LowOperation", "HighValue", "HighOperation", "LimitStartTime", "LimitEndTime" ]        
             worksheetWriter =csv.DictWriter(file, fieldnames=fieldnames)
             worksheetWriter.writeheader()
             if not wsType:
                 wsTypes = range(1,5)
                 for wsType in wsTypes:
                     try:
-                        self.__mapAndWriteColumns(plantId, wsType, unitDict, paramDict, worksheetWriter)
+                        self.__mapAndWriteColumns(plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict, subtypeDict)
                     except: 
-                        
+                        raise
                         continue
             else: 
-                self.__mapAndWriteColumns(plantId, wsType, unitDict, paramDict, worksheetWriter)
-       
-    def __mapAndWriteColumns(self, plantId, wsType, unitDict, paramDict, worksheetWriter):
+                self.__mapAndWriteColumns(plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict)
+     
+    def ExportLimitColumns(self, filename, plantId, wsType =None):                    
+        unitDict, paramDict,typeDict, subtypeDict = self.__mapUnitsAndParams()
+        with open(filename, mode='w', newline='', encoding="utf-8") as file:
+            fieldnames = ['Worksheet Type','ColumnNumber', 'Name', 'ParameterId','LocationId','LocationName','LocationType', 'LocationSubtype', 'Path', 'ParameterTranslation','ColumnId', 'UnitId', 'UnitTranslation','LastPopulatedDate', 'LimitName',"LowValue", "LowOperation", "HighValue", "HighOperation", "LimitStartTime", "LimitEndTime" ]        
+            worksheetWriter =csv.DictWriter(file, fieldnames=fieldnames)
+            worksheetWriter.writeheader()
+            if not wsType:
+                wsTypes = range(1,5)
+                for wsType in wsTypes:
+                    try:
+                        self.__mapAndWriteLimitColumns(plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict, subtypeDict)
+                    except:                         
+                        continue
+            else: 
+                self.__mapAndWriteLimitColumns(plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict)  
+    
+    def __mapAndWriteLimitColumns(self, plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict, subtypeDict):
         wsVal = self.ConvertWSTypeToStringValue(wsType)
         try:
             ws=self.Spreadsheet.GetWorksheetDefinition(plantId, wsType)[0]                              
@@ -116,14 +132,15 @@ class Exporter:
                 limit = column[6][0]
                 if limit.enumLimit ==5 or limit.enumLimit == 4 or limit.enumLimit == 1:
                     limitDict[column[1]]= [limit.name, limit.lowValue.value, limit.lowOperation, limit.highValue.value, limit.highOperation,  limit.timeWindow.startTime.jsonDateTime.value, limit.timeWindow.endTime.jsonDateTime.value ]
-                    print(limitDict[column[1]+limit.enumLimit])               
+                                 
             except:
                 pass
            
-        twinDict =self.PathFinder(plantId, columnDict)
-        limitKeys = limitDict.keys()
-        for key in columnDict.keys():
+        twinDict =self.PathFinder(plantId, columnDict)        
+        for key in columnDict.keys():                             
             try:
+                locationSubtype = subtypeDict[twinDict[columnDict[key][5]][5]][1]
+                locationType =typeDict[twinDict[columnDict[key][5]][4]][1]      
                 worksheetWriter.writerow({ 'ColumnNumber': key, 
                                         'Name':columnDict[key][0], 
                                         'ColumnId': columnDict[key][1], 
@@ -134,6 +151,7 @@ class Exporter:
                                         'LastPopulatedDate': GetDateFromRowNumber(columnDict[key][4], wsType),
                                         'UnitTranslation':unitDict[columnDict[key][3]][2],
                                         'LocationId':columnDict[key][5],
+                                        'LocationType':locationType,
                                         'ParameterTranslation':paramDict[columnDict[key][2]][1], 
                                         "Path": twinDict[columnDict[key][1]][2],
                                         'LimitName' :  limitDict[columnDict[key][1]][0], 
@@ -142,21 +160,80 @@ class Exporter:
                                         "HighValue": limitDict[columnDict[key][1]][3], 
                                         "HighOperation":self.LimitOperationToStringValue(limitDict[columnDict[key][1]][4]),
                                         "LimitStartTime":limitDict[columnDict[key][1]][5],
-                                        "LimitEndTime":limitDict[columnDict[key][1]][6]                                                                                          
+                                        "LimitEndTime":limitDict[columnDict[key][1]][6],
+                                        "LocationSubtype": locationSubtype
+                                                                                                                                
                                         })
             except (KeyError):
+                pass
+            
+    def __mapAndWriteColumns(self, plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict, subtypeDict):
+        wsVal = self.ConvertWSTypeToStringValue(wsType)
+        try:
+            ws=self.Spreadsheet.GetWorksheetDefinition(plantId, wsType)[0]                              
+        except:
+            return print("No worksheet definition found")
+        if not ws.columns:
+            return print("No columns found")             
+        
+        columnDict = {}
+        for column in ws.columns:                    
+            columnDict[column.columnNumber] = [column.name,  column.columnId, column.parameterId,  column.displayUnitId, column.lastRowNumberWithData, column.locationId, column.limits]       
+        limitDict ={}
+        for column in columnDict.values():            
+            try:
+                limit = column[6][0]
+                if limit.enumLimit ==5 or limit.enumLimit == 4 or limit.enumLimit == 1:
+                    limitDict[column[1]]= [limit.name, limit.lowValue.value, limit.lowOperation, limit.highValue.value, limit.highOperation,  limit.timeWindow.startTime.jsonDateTime.value, limit.timeWindow.endTime.jsonDateTime.value ]
+                                 
+            except:
+                pass
+           
+        twinDict =self.PathFinder(plantId, columnDict)        
+        for key in columnDict.keys():
+            locationType =typeDict[twinDict[columnDict[key][5]][4]][1]            
+            
+            try:
+                locationSubtype = subtypeDict[twinDict[columnDict[key][5]][5]][1]
+                worksheetWriter.writerow({ 'ColumnNumber': key, 
+                                        'Name':columnDict[key][0], 
+                                        'ColumnId': columnDict[key][1], 
+                                        'Worksheet Type':wsVal,
+                                        'ParameterId':columnDict[key][2],
+                                        'UnitId': columnDict[key][3],
+                                        'LocationName': twinDict[columnDict[key][1]][3],
+                                        'LastPopulatedDate': GetDateFromRowNumber(columnDict[key][4], wsType),
+                                        'UnitTranslation':unitDict[columnDict[key][3]][2],
+                                        'LocationId':columnDict[key][5],
+                                        'LocationType':locationType,
+                                        'ParameterTranslation':paramDict[columnDict[key][2]][1], 
+                                        "Path": twinDict[columnDict[key][1]][2],
+                                        'LimitName' :  limitDict[columnDict[key][1]][0], 
+                                        "LowValue": limitDict[columnDict[key][1]][1], 
+                                        "LowOperation": self.LimitOperationToStringValue(limitDict[columnDict[key][1]][2]),
+                                        "HighValue": limitDict[columnDict[key][1]][3], 
+                                        "HighOperation":self.LimitOperationToStringValue(limitDict[columnDict[key][1]][4]),
+                                        "LimitStartTime":limitDict[columnDict[key][1]][5],
+                                        "LimitEndTime":limitDict[columnDict[key][1]][6],
+                                        "LocationSubtype": locationSubtype
+                                                                                                                                
+                                        })
+            except (KeyError):
+                locationSubtype = subtypeDict[twinDict[columnDict[key][5]][5]][1]
                 worksheetWriter.writerow({ 'ColumnNumber': key, 
                                             'Name':columnDict[key][0], 
                                             'ColumnId': columnDict[key][1], 
                                             'Worksheet Type':wsVal,
                                             'ParameterId':columnDict[key][2],
                                             'UnitId': columnDict[key][3],
-                                            'LocationName': twinDict[columnDict[key][1]][3],
+                                            'LocationName': twinDict[columnDict[key][1]][3],                                            
                                             'LastPopulatedDate': GetDateFromRowNumber(columnDict[key][4], wsType),
                                             'UnitTranslation':unitDict[columnDict[key][3]][2],
                                             'LocationId':columnDict[key][5],
+                                            'LocationType':locationType,
                                             'ParameterTranslation':paramDict[columnDict[key][2]][1], 
-                                            "Path": twinDict[columnDict[key][1]][2]
+                                            "Path": twinDict[columnDict[key][1]][2],
+                                            "LocationSubtype": locationSubtype
                                             })
                 
     
@@ -165,7 +242,8 @@ class Exporter:
         parameters = self.Library.GetParameters()       
         i18N = self.Library.Geti18nKeys("AQI_FOUNDATION_LIBRARY")[0].get("AQI_FOUNDATION_LIBRARY")
         i18NUnits= i18N.get("UnitType").get("LONG")
-        i18NParams= i18N.get("Parameter").get("LONG")       
+        i18NParams= i18N.get("Parameter").get("LONG")  
+        i18NSubtypes= i18N.get("DigitalTwinSubType")   
         paramDict = {}
         for param in parameters:
             try:
@@ -178,21 +256,35 @@ class Exporter:
                 unitDict[unit.IntId]= [unit.i18nKey, unit.unitName, i18NUnits[unit.i18nKey]]
             except:
                 unitDict[unit.IntId]= [unit.i18nKey, unit.unitName, None]
-        return unitDict, paramDict
+        twinTypes = self.DigitalTwin.GetDigitalTwinTypes()
+        typeDict ={}
+        for twinType in twinTypes:
+            typeDict[twinType.id]=[twinType.i18NKeyName, twinType.description.value]
+        twinSubtypes = self.DigitalTwin.GetDigitalTwinSubtypes()
+        subTypeDict ={}
+        for subtype in twinSubtypes:
+            try:
+                subTypeDict[subtype.id]=[subtype.i18NKeyName, i18NSubtypes[subtype.i18NKeyName] ]
+            except(KeyError):
+                subTypeDict[subtype.id]=[subtype.i18NKeyName, subtype.i18NKeyName]
+        
+        return unitDict, paramDict, typeDict, subTypeDict
     
     def ExportColumnDetailsByType(self, filename, plantId, wsType=4):         
-        unitDict, paramDict = self.__mapUnitsAndParams()
+        unitDict, paramDict, type = self.__mapUnitsAndParams()
         with open(filename, mode='w', newline='', encoding="utf-8") as file:
             fieldnames = ['Worksheet Type','ColumnNumber', 'Name', 'ParameterId','LocationId','LocationName', 'Path', 'ParameterTranslation','ColumnId', 'UnitId', 'UnitTranslation','LastPopulatedDate', 'LimitName',"LowValue", "LowOperation", "HighValue", "HighOperation", "LimitStartTime", "LimitEndTime" ]        
             worksheetWriter =csv.DictWriter(file, fieldnames=fieldnames)
             worksheetWriter.writeheader()
             self.__mapAndWriteColumns(plantId, wsType, unitDict, paramDict, worksheetWriter)
                              
-    def PathFinder(self, plantId, columnDict):
-        twins = self.DigitalTwin.GetDescendants(plantId)
+    def PathFinder(self, plantId, columnDict):        
+        twins = self.DigitalTwin.GetDescendantsByType(plantId, "ae018857-5f27-4fe4-8117-d0cbaecb9c1e", False)
+        twins.MergeFrom(self.DigitalTwin.GetDescendantsByRefByCategory(plantId, 2,False))
+        twins= twins.items      
         twinDict ={}
         for twin in twins:
-            twinDict[twin.twinReferenceId.value]=[twin.parentTwinReferenceId.value, twin.name.value, None, None]                
+            twinDict[twin.twinReferenceId.value]=[twin.parentTwinReferenceId.value, twin.name.value, None, None, twin.twinTypeId, twin.twinSubTypeId.value]                
         for key in columnDict.keys():
             twinId=columnDict[key][1]
             path =[]

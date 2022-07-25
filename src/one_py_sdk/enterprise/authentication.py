@@ -1,7 +1,7 @@
 import requests
 import json
 from datetime import datetime, time, timedelta
-from shared.helpers.protobufhelper import DeserializeResponse
+from one_py_sdk.shared.helpers.protobufhelper import DeserializeResponse
 from one_interfaces import user_pb2 as User
 from one_interfaces import role_pb2 as role
 
