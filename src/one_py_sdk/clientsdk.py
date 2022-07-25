@@ -1,16 +1,16 @@
 import requests
-from enterprise.core import CoreApi
-from historian.data import HistorianAPI
-from operations.spreadsheet import SpreadsheetApi
-from common.library import LibraryApi
-from enterprise.twin  import DigitalTwinApi
-from shared.constants import *
 from datetime import time
 import json
+from one_py_sdk.enterprise.core import CoreApi
+from one_py_sdk.historian.data import HistorianApi
+from one_py_sdk.operations.spreadsheet import SpreadsheetApi
+from one_py_sdk.common.library import LibraryApi
+from one_py_sdk.enterprise.twin  import DigitalTwinApi
+from one_py_sdk.shared.constants import *
+from one_py_sdk.enterprise.authentication import AuthenticationApi
+from one_py_sdk.shared.helpers.csvhelper import Exporter
 
 
-from enterprise.authentication import AuthenticationApi
-from shared.helpers.csvhelper import Exporter
 
 class ClientSdk:
 	def __init__(self, env="https://api-us.aquaticinformatics.net/"):
@@ -23,7 +23,7 @@ class ClientSdk:
 		self.Spreadsheet = SpreadsheetApi(self.Environment, self.Authentication)
 		self.Library = LibraryApi(self.Environment, self.Authentication)
 		self.Core = CoreApi(self.Environment, self.Authentication)
-		self.Historian = HistorianAPI(self.Environment, self.Authentication)
+		self.Historian = HistorianApi(self.Environment, self.Authentication)
 		self.Exporter = Exporter(self.Environment, self.Authentication)
 	
 	def LoadCurrentUser(self):

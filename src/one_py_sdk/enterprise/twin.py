@@ -1,7 +1,7 @@
 import requests
 import json
-from enterprise.authentication import AuthenticationApi
-from shared.helpers.protobufhelper import DeserializeResponse
+from one_py_sdk.enterprise.authentication import AuthenticationApi
+from one_py_sdk.shared.helpers.protobufhelper import DeserializeResponse
 import uuid 
 
 
@@ -40,6 +40,14 @@ class DigitalTwinApi:
         headers = {'Authorization': self.Authentication.Token.access_token, "Accept": "application/x-protobuf"}
         response = DeserializeResponse(requests.get(url, headers=headers))   
         return response.content.digitalTwinTypes.items
+    
+    def GetDigitalTwinType(self, twinTypeId):
+        requestId =uuid.uuid4()
+        url = f'{self.Environment}{self.AppUrl}DigitalTwinType/{twinTypeId}?requestId={str(requestId)}'
+        headers = {'Authorization': self.Authentication.Token.access_token, "Accept": "application/x-protobuf"}
+        response = DeserializeResponse(requests.get(url, headers=headers))   
+        return response.content.digitalTwinTypes.items
+
 
     def GetDigitalTwinSubtypes(self):
         requestId =uuid.uuid4()
@@ -48,13 +56,15 @@ class DigitalTwinApi:
         response = DeserializeResponse(requests.get(url, headers=headers))   
         return response.content.digitalTwinSubtypes.items
     
-    def GetDescendantsByType(self, twinRefId:str, twinTypeId:str):
+    def GetDescendantsByType(self, twinRefId:str, twinTypeId:str, items=True):
         requestId =uuid.uuid4()
         url = self.Environment+self.AppUrl+"DigitalTwin/Ref/"+twinRefId+"/Type/"+twinTypeId+"/Descendants?requestId="+str(requestId)        
         headers = {'Authorization': self.Authentication.Token.access_token, "Accept": "application/x-protobuf"}
         response = DeserializeResponse(requests.get(url, headers=headers))        
-        return response.content.DigitalTwins.items
-    
+        if items:
+            return response.content.DigitalTwins.items
+        else:
+            return response.content.DigitalTwins    
     def GetDescendantsBySubType(self, twinRefId:str, twinSubtypeId:str):
         requestId =uuid.uuid4()
         url = self.Environment+self.AppUrl+"DigitalTwin/Ref/"+twinRefId+"/Subtype/"+twinSubtypeId+"/Descendants?requestId="+str(requestId)        
@@ -68,6 +78,16 @@ class DigitalTwinApi:
         headers = {'Authorization': self.Authentication.Token.access_token, "Accept": "application/x-protobuf"}
         response = DeserializeResponse(requests.get(url, headers=headers))        
         return response.content.DigitalTwins.items
+    
+    def GetDescendantsByRefByCategory(self, twinRefId:str, categoryId:int, items=True):
+        requestId =uuid.uuid4()
+        url = f'{self.Environment}{self.AppUrl}DigitalTwin/Ref/{twinRefId}/Category/{categoryId}/Descendants?requestId={str(requestId)}'        
+        headers = {'Authorization': self.Authentication.Token.access_token, "Accept": "application/x-protobuf"}
+        response = DeserializeResponse(requests.get(url, headers=headers))        
+        if items:
+            return response.content.DigitalTwins.items
+        else:
+            return response.content.DigitalTwins
     
     def findTelemetryPath(self, twinRefId):
         statusCode=""

@@ -1,11 +1,11 @@
 from datetime import datetime
 import requests
 import json
-from enterprise.authentication import AuthenticationApi
-from shared.helpers.protobufhelper import DeserializeResponse
-from one_interfaces import historian_data_pb2 as Historian 
+from one_py_sdk.enterprise.authentication import AuthenticationApi
+from one_py_sdk.shared.helpers.protobufhelper import DeserializeResponse
 
-class HistorianAPI:
+
+class HistorianApi:
     def __init__(self, env, auth:AuthenticationApi):
         self.Environment =env
         self.Authentication = auth
