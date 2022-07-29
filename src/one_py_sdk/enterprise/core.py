@@ -18,11 +18,11 @@ class CoreApi:
         else:
             url = self.Environment+self.AppUrl+"User/"+userId
         headers = {'Authorization': self.Authentication.Token.access_token, "Accept":"application/x-protobuf"}
-        response = DeserializeResponse(requests.get(url, headers=headers))         
-        return response.content.users.items[0]
-        
-        
-        
+        response = DeserializeResponse(requests.get(url, headers=headers))       
+        if response.errors:            
+            return response  
+        return response.content.users.items[0]      
+             
     
 
 class UserHelper:

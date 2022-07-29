@@ -13,7 +13,9 @@ class LibraryApi:
     def GetUnits(self):
         url = self.Environment+self.AppUrl+"unit"     
         headers = {'Authorization': self.Authentication.Token.access_token, "Accept": "application/x-protobuf"}
-        response = DeserializeResponse(requests.get(url, headers=headers))   
+        response = DeserializeResponse(requests.get(url, headers=headers))  
+        if response.errors:            
+            return response 
         return response.content.units.items
     
     def getParameter(self, parameterId):
@@ -22,13 +24,18 @@ class LibraryApi:
     def GetParameters(self):
         url = self.Environment+self.AppUrl+"parameter"     
         headers = {'Authorization': self.Authentication.Token.access_token, "Accept": "application/x-protobuf"}
-        response = DeserializeResponse(requests.get(url, headers=headers))   
+        r =requests.get(url, headers=headers)        
+        response = DeserializeResponse(r)
+        if response.errors:            
+            return response        
         return response.content.parameters.items
     
     def GetQuantityTypes(self):
         url = self.Environment+self.AppUrl+"quantityType"     
         headers = {'Authorization': self.Authentication.Token.access_token, "Accept": "application/x-protobuf"}
         response = DeserializeResponse(requests.get(url, headers=headers))   
+        if response.errors:            
+            return response         
         return response.content.quantityTypes.items
     
     def Geti18nKeys(self,  modules:str, language:str="en",):

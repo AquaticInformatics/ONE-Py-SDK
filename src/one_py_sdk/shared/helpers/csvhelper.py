@@ -12,8 +12,8 @@ class Exporter:
         self.Authentication = auth
         self.Spreadsheet = SpreadsheetApi(env, auth)
         self.Library = LibraryApi(env, auth)
-        self.DigitalTwin = DigitalTwinApi(env, auth)
-                                                      
+        self.DigitalTwin = DigitalTwinApi(env, auth)                                                      
+    
     def ExportWorksheet(self, filename, plantId, startDate, endDate, updatedAfter=None, wsType=None): 
         with open(filename, mode='w', newline='', encoding="utf-8") as file:        
             fieldnames = ['Worksheet Type', 'Time', 'ColumnName','ColumnId','RowNumber', 'Value', 'StringValue', 'DateEntered']                
@@ -34,15 +34,15 @@ class Exporter:
         try:
             ws=self.Spreadsheet.GetWorksheetDefinition(plantId, wsType)[0]                  
         except:
-            return print("No worksheet definition found")                  
+            return
         if not ws.columns:
-            return print("No columns found")
+            return 
         rows =self.Spreadsheet.GetRowsForTimeRange(plantId, wsType, startDate, endDate)
         try:
             rowNumbers = rows.keys()
             rowValues = rows.values()  
         except(AttributeError):
-            return print("No rows found")                      
+            return 
         rowDict ={}
         for num in rowNumbers:
             rowDict[num]= str(GetDateFromRowNumber(num, ws.enumWorksheet))
@@ -96,7 +96,7 @@ class Exporter:
                         raise
                         continue
             else: 
-                self.__mapAndWriteColumns(plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict)
+                self.__mapAndWriteColumns(plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict, subtypeDict)
      
     def ExportLimitColumns(self, filename, plantId, wsType =None):                    
         unitDict, paramDict,typeDict, subtypeDict = self.__mapUnitsAndParams()
@@ -119,9 +119,9 @@ class Exporter:
         try:
             ws=self.Spreadsheet.GetWorksheetDefinition(plantId, wsType)[0]                              
         except:
-            return print("No worksheet definition found")
+            return 
         if not ws.columns:
-            return print("No columns found")             
+            return 
         
         columnDict = {}
         for column in ws.columns:                    
@@ -172,9 +172,9 @@ class Exporter:
         try:
             ws=self.Spreadsheet.GetWorksheetDefinition(plantId, wsType)[0]                              
         except:
-            return print("No worksheet definition found")
+            return 
         if not ws.columns:
-            return print("No columns found")             
+            return
         
         columnDict = {}
         for column in ws.columns:                    
@@ -271,12 +271,12 @@ class Exporter:
         return unitDict, paramDict, typeDict, subTypeDict
     
     def ExportColumnDetailsByType(self, filename, plantId, wsType=4):         
-        unitDict, paramDict, type = self.__mapUnitsAndParams()
+        unitDict, paramDict,typeDict, subtypeDict = self.__mapUnitsAndParams()
         with open(filename, mode='w', newline='', encoding="utf-8") as file:
-            fieldnames = ['Worksheet Type','ColumnNumber', 'Name', 'ParameterId','LocationId','LocationName', 'Path', 'ParameterTranslation','ColumnId', 'UnitId', 'UnitTranslation','LastPopulatedDate', 'LimitName',"LowValue", "LowOperation", "HighValue", "HighOperation", "LimitStartTime", "LimitEndTime" ]        
+            fieldnames = ['Worksheet Type','ColumnNumber', 'Name', 'ParameterId','LocationId','LocationName','LocationType', 'LocationSubtype', 'Path', 'ParameterTranslation','ColumnId', 'UnitId', 'UnitTranslation','LastPopulatedDate', 'LimitName',"LowValue", "LowOperation", "HighValue", "HighOperation", "LimitStartTime", "LimitEndTime" ]        
             worksheetWriter =csv.DictWriter(file, fieldnames=fieldnames)
             worksheetWriter.writeheader()
-            self.__mapAndWriteColumns(plantId, wsType, unitDict, paramDict, worksheetWriter)
+            self.__mapAndWriteColumns(plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict, subtypeDict)
                              
     def PathFinder(self, plantId, columnDict):        
         twins = self.DigitalTwin.GetDescendantsByType(plantId, "ae018857-5f27-4fe4-8117-d0cbaecb9c1e", False)

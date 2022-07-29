@@ -1,10 +1,8 @@
 from datetime import datetime, timezone, timedelta
 from one_interfaces import jsonTicksDateTime_pb2 as jsonTicksTime
 
-
-BaseTime = datetime(1900, 1, 1, 0, 0, 0, 0, timezone.utc)
-
 def GetRowNumber(date:datetime, wsType):
+    BaseTime = datetime(1900, 1, 1, 0, 0, 0, 0, timezone.utc)
     diffTime = date- BaseTime
     windowSize = TimeSpanOfWorksheetType(wsType)
     diffTimeMinutes = diffTime.total_seconds()/60
@@ -12,6 +10,7 @@ def GetRowNumber(date:datetime, wsType):
     return int(diffTimeMinutes/ windowSizeMinutes) +1 
 
 def GetDateFromRowNumber(rowNumber, wsType):
+    BaseTime = datetime(1900, 1, 1, 0, 0, 0, 0, timezone.utc)
     row =rowNumber-1
     windowSize = TimeSpanOfWorksheetType(wsType)
     windowSizeMinutes =windowSize.total_seconds()/60
