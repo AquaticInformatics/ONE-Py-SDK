@@ -3,3 +3,5 @@ __pycache__/
 .venv
 one_interfaces*
 .vscode
+dist/*
+one_py_sdk.egg-info/*
