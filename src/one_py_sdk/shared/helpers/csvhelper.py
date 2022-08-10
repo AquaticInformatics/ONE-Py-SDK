@@ -13,10 +13,13 @@ class Exporter:
         self.Spreadsheet = SpreadsheetApi(env, auth)
         self.Library = LibraryApi(env, auth)
         self.DigitalTwin = DigitalTwinApi(env, auth)                                                      
-    
+    dataFieldNames = ['Worksheet Type', 'Time', 'ColumnName','ColumnId','RowNumber', 'Value', 'StringValue', 'DateEntered', 'ChangedUsing']    
+    columnFieldNames =['Worksheet Type','ColumnNumber', 'Name', 'ParameterId','LocationId','LocationName','LocationType', 'LocationSubtype', 'Path', 
+                     'ParameterTranslation','ColumnId', 'UnitId', 'UnitTranslation','LastPopulatedDate','DataTag', 
+                     'LimitName',"LowValue", "LowOperation", "HighValue", "HighOperation", "LimitStartTime", "LimitEndTime" ]              
     def ExportWorksheet(self, filename, plantId, startDate, endDate, updatedAfter=None, wsType=None): 
         with open(filename, mode='w', newline='', encoding="utf-8") as file:        
-            fieldnames = ['Worksheet Type', 'Time', 'ColumnName','ColumnId','RowNumber', 'Value', 'StringValue', 'DateEntered']                
+            fieldnames = self.dataFieldNames
             worksheetWriter =csv.DictWriter(file,fieldnames=fieldnames)
             worksheetWriter.writeheader()
             if not wsType:                    
@@ -58,33 +61,43 @@ class Exporter:
                         dateEntered =datetime.strptime(dateEntered[:-2], '%Y-%m-%dT%H:%M:%S.%f')
                         dateEntered =dateEntered.replace(tzinfo=timezone.utc)
                         if dateEntered> updatedAfter:
-                            worksheetWriter.writerow({'Worksheet Type': wsVal, 'Time': rowDict[vals.rowNumber],'ColumnName':numberMapping[cell.columnNumber][0],
-                                                'ColumnId':numberMapping[cell.columnNumber][1],'Value': (cell.cellDatas[0].value.value),
-                                                'RowNumber':vals.rowNumber, 'StringValue':cell.cellDatas[0].stringValue.value, 
-                                                'DateEntered':cell.cellDatas[0].auditEvents[-1].timeStamp.jsonDateTime.value})
+                            worksheetWriter.writerow({'Worksheet Type': wsVal, 
+                                                'Time': rowDict[vals.rowNumber],'ColumnName':numberMapping[cell.columnNumber][0],
+                                                'ColumnId':numberMapping[cell.columnNumber][1],
+                                                'Value': (cell.cellDatas[0].value.value),
+                                                'RowNumber':vals.rowNumber, 
+                                                'StringValue':cell.cellDatas[0].stringValue.value, 
+                                                'DateEntered':cell.cellDatas[0].auditEvents[-1].timeStamp.jsonDateTime.value, 
+                                                'ChangedUsing':self.EnumDataSourceToStringValue(cell.cellDatas[0].auditEvents[-1].enumDataSource)})
                     except(IndexError):                    
                         pass
                 else:
                     try:
-                            worksheetWriter.writerow({'Worksheet Type': wsVal, 'Time': rowDict[vals.rowNumber],'ColumnName':numberMapping[cell.columnNumber][0],
-                                                'ColumnId':numberMapping[cell.columnNumber][1],'Value': (cell.cellDatas[0].value.value),
-                                                'RowNumber':vals.rowNumber, 'StringValue':cell.cellDatas[0].stringValue.value, 
-                                                'DateEntered':cell.cellDatas[0].auditEvents[-1].timeStamp.jsonDateTime.value})
+                            worksheetWriter.writerow({'Worksheet Type': wsVal,
+                                                'Time': rowDict[vals.rowNumber],
+                                                'ColumnName':numberMapping[cell.columnNumber][0],
+                                                'ColumnId':numberMapping[cell.columnNumber][1],
+                                                'Value': (cell.cellDatas[0].value.value),
+                                                'RowNumber':vals.rowNumber, 
+                                                'StringValue':cell.cellDatas[0].stringValue.value, 
+                                                'DateEntered':cell.cellDatas[0].auditEvents[-1].timeStamp.jsonDateTime.value, 
+                                                'ChangedUsing':self.EnumDataSourceToStringValue(cell.cellDatas[0].auditEvents[-1].enumDataSource)})
                     except(IndexError):                    
                         pass
                                                                     
     def ExportWorksheetByType(self, filename, plantId, startDate, endDate, wsType=4, updatedAfter=None):               
             wsVal =self.ConvertWSTypeToStringValue(wsType)  
             with open(filename, mode='w', newline='', encoding="utf-8") as file:        
-                fieldnames = ['Worksheet Type', 'Time', 'ColumnName','ColumnId','RowNumber', 'Value', 'StringValue', 'DateEntered']                
+                fieldnames = self.dataFieldNames
                 worksheetWriter =csv.DictWriter(file,fieldnames=fieldnames)
                 worksheetWriter.writeheader()                                       
                 self.__mapAndWriteRowsAndColumns(worksheetWriter, plantId, wsType, startDate, endDate, updatedAfter)
 
     def ExportColumnDetails(self, filename, plantId, wsType =None):                    
         unitDict, paramDict,typeDict, subtypeDict = self.__mapUnitsAndParams()
+        
         with open(filename, mode='w', newline='', encoding="utf-8") as file:
-            fieldnames = ['Worksheet Type','ColumnNumber', 'Name', 'ParameterId','LocationId','LocationName','LocationType', 'LocationSubtype', 'Path', 'ParameterTranslation','ColumnId', 'UnitId', 'UnitTranslation','LastPopulatedDate', 'LimitName',"LowValue", "LowOperation", "HighValue", "HighOperation", "LimitStartTime", "LimitEndTime" ]        
+            fieldnames =self.columnFieldNames
             worksheetWriter =csv.DictWriter(file, fieldnames=fieldnames)
             worksheetWriter.writeheader()
             if not wsType:
@@ -101,7 +114,7 @@ class Exporter:
     def ExportLimitColumns(self, filename, plantId, wsType =None):                    
         unitDict, paramDict,typeDict, subtypeDict = self.__mapUnitsAndParams()
         with open(filename, mode='w', newline='', encoding="utf-8") as file:
-            fieldnames = ['Worksheet Type','ColumnNumber', 'Name', 'ParameterId','LocationId','LocationName','LocationType', 'LocationSubtype', 'Path', 'ParameterTranslation','ColumnId', 'UnitId', 'UnitTranslation','LastPopulatedDate', 'LimitName',"LowValue", "LowOperation", "HighValue", "HighOperation", "LimitStartTime", "LimitEndTime" ]        
+            fieldnames = self.columnFieldNames
             worksheetWriter =csv.DictWriter(file, fieldnames=fieldnames)
             worksheetWriter.writeheader()
             if not wsType:
@@ -125,7 +138,7 @@ class Exporter:
         
         columnDict = {}
         for column in ws.columns:                    
-            columnDict[column.columnNumber] = [column.name,  column.columnId, column.parameterId,  column.displayUnitId, column.lastRowNumberWithData, column.locationId, column.limits]       
+            columnDict[column.columnNumber] = [column.name,  column.columnId, column.parameterId,  column.displayUnitId, column.lastRowNumberWithData, column.locationId, column.limits, column.dataSourceBinding]       
         limitDict ={}
         for column in columnDict.values():            
             try:
@@ -139,6 +152,10 @@ class Exporter:
         twinDict =self.PathFinder(plantId, columnDict)        
         for key in columnDict.keys():                             
             try:
+                try:
+                    dataSourceBinding =columnDict[key][7]
+                except:
+                    dataSourceBinding=""
                 locationSubtype = subtypeDict[twinDict[columnDict[key][5]][5]][1]
                 locationType =typeDict[twinDict[columnDict[key][5]][4]][1]      
                 worksheetWriter.writerow({ 'ColumnNumber': key, 
@@ -161,7 +178,8 @@ class Exporter:
                                         "HighOperation":self.LimitOperationToStringValue(limitDict[columnDict[key][1]][4]),
                                         "LimitStartTime":limitDict[columnDict[key][1]][5],
                                         "LimitEndTime":limitDict[columnDict[key][1]][6],
-                                        "LocationSubtype": locationSubtype
+                                        "LocationSubtype": locationSubtype,
+                                        "DataTag":dataSourceBinding
                                                                                                                                 
                                         })
             except (KeyError):
@@ -178,7 +196,7 @@ class Exporter:
         
         columnDict = {}
         for column in ws.columns:                    
-            columnDict[column.columnNumber] = [column.name,  column.columnId, column.parameterId,  column.displayUnitId, column.lastRowNumberWithData, column.locationId, column.limits]       
+            columnDict[column.columnNumber] = [column.name,  column.columnId, column.parameterId,  column.displayUnitId, column.lastRowNumberWithData, column.locationId, column.limits, column.dataSourceBinding.bindingId]       
         limitDict ={}
         for column in columnDict.values():            
             try:
@@ -192,7 +210,10 @@ class Exporter:
         twinDict =self.PathFinder(plantId, columnDict)        
         for key in columnDict.keys():
             locationType =typeDict[twinDict[columnDict[key][5]][4]][1]            
-            
+            try:
+                dataSourceBinding =columnDict[key][7]
+            except:
+                dataSourceBinding=""
             try:
                 locationSubtype = subtypeDict[twinDict[columnDict[key][5]][5]][1]
                 worksheetWriter.writerow({ 'ColumnNumber': key, 
@@ -207,7 +228,7 @@ class Exporter:
                                         'LocationId':columnDict[key][5],
                                         'LocationType':locationType,
                                         'ParameterTranslation':paramDict[columnDict[key][2]][1], 
-                                        "Path": twinDict[columnDict[key][1]][2],
+                                        "Path": twinDict[columnDict[key][1]][2],                                        
                                         'LimitName' :  limitDict[columnDict[key][1]][0], 
                                         "LowValue": limitDict[columnDict[key][1]][1], 
                                         "LowOperation": self.LimitOperationToStringValue(limitDict[columnDict[key][1]][2]),
@@ -215,8 +236,8 @@ class Exporter:
                                         "HighOperation":self.LimitOperationToStringValue(limitDict[columnDict[key][1]][4]),
                                         "LimitStartTime":limitDict[columnDict[key][1]][5],
                                         "LimitEndTime":limitDict[columnDict[key][1]][6],
-                                        "LocationSubtype": locationSubtype
-                                                                                                                                
+                                        "LocationSubtype": locationSubtype,
+                                        "DataTag":dataSourceBinding                                                                                                                              
                                         })
             except (KeyError):
                 locationSubtype = subtypeDict[twinDict[columnDict[key][5]][5]][1]
@@ -233,10 +254,10 @@ class Exporter:
                                             'LocationType':locationType,
                                             'ParameterTranslation':paramDict[columnDict[key][2]][1], 
                                             "Path": twinDict[columnDict[key][1]][2],
-                                            "LocationSubtype": locationSubtype
+                                            "LocationSubtype": locationSubtype,
+                                            "DataTag":dataSourceBinding     
                                             })
                 
-    
     def __mapUnitsAndParams(self):
         units = self.Library.GetUnits()  
         parameters = self.Library.GetParameters()       
@@ -273,7 +294,7 @@ class Exporter:
     def ExportColumnDetailsByType(self, filename, plantId, wsType=4):         
         unitDict, paramDict,typeDict, subtypeDict = self.__mapUnitsAndParams()
         with open(filename, mode='w', newline='', encoding="utf-8") as file:
-            fieldnames = ['Worksheet Type','ColumnNumber', 'Name', 'ParameterId','LocationId','LocationName','LocationType', 'LocationSubtype', 'Path', 'ParameterTranslation','ColumnId', 'UnitId', 'UnitTranslation','LastPopulatedDate', 'LimitName',"LowValue", "LowOperation", "HighValue", "HighOperation", "LimitStartTime", "LimitEndTime" ]        
+            fieldnames =self.columnFieldNames
             worksheetWriter =csv.DictWriter(file, fieldnames=fieldnames)
             worksheetWriter.writeheader()
             self.__mapAndWriteColumns(plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict, subtypeDict)
@@ -324,6 +345,26 @@ class Exporter:
             return "Unknown"            
         else: 
              return print(f"{limitOperation}Enter valid limit Operation value (1 is >, 2  is ≥  , 3 is < , 4 is ≤)")      
+   
+    def EnumDataSourceToStringValue(self, enumDataSource):
+        if enumDataSource ==1:
+            return "MOBILE"
+        elif enumDataSource ==2:
+            return "COMPUTATION"   
+        elif enumDataSource ==3:
+            return "WEBAPP"                                  
+        elif enumDataSource ==4:
+            return "INSTRUMENT"       
+        elif enumDataSource ==0:
+            return "UNKNOWN"            
+        elif enumDataSource ==5:
+            return "IMPORT"
+        elif enumDataSource ==6:
+            return "SPREADSHEETDEF"
+        elif enumDataSource ==7:
+            return "CONNECT"   
+        else: 
+             return print(f"{enumDataSource}Enter valid enumDataSource (valid values are 0-7))")      
    
           
             
