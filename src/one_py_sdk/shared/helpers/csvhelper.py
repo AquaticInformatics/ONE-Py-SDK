@@ -3,6 +3,7 @@ import json
 from one_py_sdk.operations.spreadsheet import SpreadsheetApi
 from one_py_sdk.common.library import LibraryApi
 from one_py_sdk.enterprise.twin import DigitalTwinApi
+from one_py_sdk.common.configuration import ConfigurationApi
 from one_py_sdk.shared.helpers.datetimehelper import *
 from datetime import datetime, timezone
 
@@ -12,10 +13,11 @@ class Exporter:
         self.Authentication = auth
         self.Spreadsheet = SpreadsheetApi(env, auth)
         self.Library = LibraryApi(env, auth)
-        self.DigitalTwin = DigitalTwinApi(env, auth)                                                      
+        self.DigitalTwin = DigitalTwinApi(env, auth)
+        self.Configuration = ConfigurationApi(env, auth)                                                      
     dataFieldNames = ['Worksheet Type', 'Time', 'ColumnName','ColumnId','RowNumber', 'Value', 'StringValue', 'DateEntered', 'ChangedUsing']    
     columnFieldNames =['Worksheet Type','ColumnNumber', 'Name', 'ParameterId','LocationId','LocationName','LocationType', 'LocationSubtype', 'Path', 
-                     'ParameterTranslation','ColumnId', 'UnitId', 'UnitTranslation','LastPopulatedDate','DataTag', 
+                     'ParameterTranslation','ColumnId', 'UnitId', 'UnitTranslation','LastPopulatedDate','DataBinding', 
                      'LimitName',"LowValue", "LowOperation", "HighValue", "HighOperation", "LimitStartTime", "LimitEndTime" ]              
     def ExportWorksheet(self, filename, plantId, startDate, endDate, updatedAfter=None, wsType=None): 
         with open(filename, mode='w', newline='', encoding="utf-8") as file:        
@@ -93,7 +95,7 @@ class Exporter:
                 worksheetWriter.writeheader()                                       
                 self.__mapAndWriteRowsAndColumns(worksheetWriter, plantId, wsType, startDate, endDate, updatedAfter)
 
-    def ExportColumnDetails(self, filename, plantId, wsType =None):                    
+    def ExportColumnDetails(self, filename, plantId, wsType =None, viewName=""):                    
         unitDict, paramDict,typeDict, subtypeDict = self.__mapUnitsAndParams()
         
         with open(filename, mode='w', newline='', encoding="utf-8") as file:
@@ -104,14 +106,14 @@ class Exporter:
                 wsTypes = range(1,5)
                 for wsType in wsTypes:
                     try:
-                        self.__mapAndWriteColumns(plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict, subtypeDict)
+                        self.__mapAndWriteColumns(plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict, subtypeDict, viewName)
                     except: 
                         raise
                         continue
             else: 
-                self.__mapAndWriteColumns(plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict, subtypeDict)
+                self.__mapAndWriteColumns(plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict, subtypeDict, viewName)
      
-    def ExportLimitColumns(self, filename, plantId, wsType =None):                    
+    def ExportLimitColumns(self, filename, plantId, wsType =None, viewName=""):                    
         unitDict, paramDict,typeDict, subtypeDict = self.__mapUnitsAndParams()
         with open(filename, mode='w', newline='', encoding="utf-8") as file:
             fieldnames = self.columnFieldNames
@@ -121,13 +123,13 @@ class Exporter:
                 wsTypes = range(1,5)
                 for wsType in wsTypes:
                     try:
-                        self.__mapAndWriteLimitColumns(plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict, subtypeDict)
+                        self.__mapAndWriteLimitColumns(plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict, subtypeDict, viewName="")
                     except:                         
                         continue
             else: 
-                self.__mapAndWriteLimitColumns(plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict)  
+                self.__mapAndWriteLimitColumns(plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict, subtypeDict,  viewName="")  
     
-    def __mapAndWriteLimitColumns(self, plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict, subtypeDict):
+    def __mapAndWriteLimitColumns(self, plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict, subtypeDict,  viewName=""):
         wsVal = self.ConvertWSTypeToStringValue(wsType)
         try:
             ws=self.Spreadsheet.GetWorksheetDefinition(plantId, wsType)[0]                              
@@ -179,13 +181,13 @@ class Exporter:
                                         "LimitStartTime":limitDict[columnDict[key][1]][5],
                                         "LimitEndTime":limitDict[columnDict[key][1]][6],
                                         "LocationSubtype": locationSubtype,
-                                        "DataTag":dataSourceBinding
+                                        "DataBinding":dataSourceBinding
                                                                                                                                 
                                         })
             except (KeyError):
                 pass
             
-    def __mapAndWriteColumns(self, plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict, subtypeDict):
+    def __mapAndWriteColumns(self, plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict, subtypeDict, viewName=""):
         wsVal = self.ConvertWSTypeToStringValue(wsType)
         try:
             ws=self.Spreadsheet.GetWorksheetDefinition(plantId, wsType)[0]                              
@@ -194,9 +196,21 @@ class Exporter:
         if not ws.columns:
             return
         
+        configsInPlant = self.Configuration.GetSpreadsheetViews(plantId)
+        configsWithName = [config.configurationData for config in configsInPlant if json.loads(config.configurationData).get('name')==viewName]
+        columnNumbersInConfig=[json.loads(jsData).get('columnNumbers') for jsData in configsWithName]
+        columnsInView=[]
+        for lst in columnNumbersInConfig:
+            for item in lst:
+                columnsInView.append(item)
+        
         columnDict = {}
-        for column in ws.columns:                    
-            columnDict[column.columnNumber] = [column.name,  column.columnId, column.parameterId,  column.displayUnitId, column.lastRowNumberWithData, column.locationId, column.limits, column.dataSourceBinding.bindingId]       
+        for column in ws.columns:
+            if (viewName!=""):
+                if(column.columnNumber in columnsInView):
+                    columnDict[column.columnNumber] = [column.name,  column.columnId, column.parameterId,  column.displayUnitId, column.lastRowNumberWithData, column.locationId, column.limits, column.dataSourceBinding.bindingId]       
+            else:
+                columnDict[column.columnNumber] = [column.name,  column.columnId, column.parameterId,  column.displayUnitId, column.lastRowNumberWithData, column.locationId, column.limits, column.dataSourceBinding.bindingId]       
         limitDict ={}
         for column in columnDict.values():            
             try:
@@ -237,7 +251,7 @@ class Exporter:
                                         "LimitStartTime":limitDict[columnDict[key][1]][5],
                                         "LimitEndTime":limitDict[columnDict[key][1]][6],
                                         "LocationSubtype": locationSubtype,
-                                        "DataTag":dataSourceBinding                                                                                                                              
+                                        "DataBinding":dataSourceBinding                                                                                                                              
                                         })
             except (KeyError):
                 locationSubtype = subtypeDict[twinDict[columnDict[key][5]][5]][1]
@@ -255,7 +269,7 @@ class Exporter:
                                             'ParameterTranslation':paramDict[columnDict[key][2]][1], 
                                             "Path": twinDict[columnDict[key][1]][2],
                                             "LocationSubtype": locationSubtype,
-                                            "DataTag":dataSourceBinding     
+                                            "DataBinding":dataSourceBinding     
                                             })
                 
     def __mapUnitsAndParams(self):
@@ -291,13 +305,13 @@ class Exporter:
         
         return unitDict, paramDict, typeDict, subTypeDict
     
-    def ExportColumnDetailsByType(self, filename, plantId, wsType=4):         
+    def ExportColumnDetailsByType(self, filename, plantId, wsType=4,  viewName=""):         
         unitDict, paramDict,typeDict, subtypeDict = self.__mapUnitsAndParams()
         with open(filename, mode='w', newline='', encoding="utf-8") as file:
             fieldnames =self.columnFieldNames
             worksheetWriter =csv.DictWriter(file, fieldnames=fieldnames)
             worksheetWriter.writeheader()
-            self.__mapAndWriteColumns(plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict, subtypeDict)
+            self.__mapAndWriteColumns(plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict, subtypeDict, viewName="")
                              
     def PathFinder(self, plantId, columnDict):        
         twins = self.DigitalTwin.GetDescendantsByType(plantId, "ae018857-5f27-4fe4-8117-d0cbaecb9c1e", False)
