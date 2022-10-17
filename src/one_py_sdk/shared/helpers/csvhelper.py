@@ -18,7 +18,8 @@ class Exporter:
     dataFieldNames = ['Worksheet Type', 'Time', 'ColumnName','ColumnId','RowNumber', 'Value', 'StringValue', 'DateEntered', 'ChangedUsing']    
     columnFieldNames =['Worksheet Type','ColumnNumber', 'Name', 'ParameterId','LocationId','LocationName','LocationType', 'LocationSubtype', 'Path', 
                      'ParameterTranslation','ColumnId', 'UnitId', 'UnitTranslation','LastPopulatedDate','DataBinding', 
-                     'LimitName',"LowValue", "LowOperation", "HighValue", "HighOperation", "LimitStartTime", "LimitEndTime" ]              
+                     'LimitName',"LowValue", "LowOperation", "HighValue", "HighOperation", "LimitStartTime", "LimitEndTime" ]     
+    limitFieldNames =["ColumnId","ColumnName", 'LimitName',"LimitType","LowValue", "LowOperation", "HighValue", "HighOperation", "LimitStartTime", "LimitEndTime", "NotificationsEnabled" ]         
     def ExportWorksheet(self, filename, plantId, startDate, endDate, updatedAfter=None, wsType=None): 
         with open(filename, mode='w', newline='', encoding="utf-8") as file:        
             fieldnames = self.dataFieldNames
@@ -129,6 +130,42 @@ class Exporter:
             else: 
                 self.__mapAndWriteLimitColumns(plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict, subtypeDict,  viewName="")  
     
+    def ExportLimits(self, filename, plantId, wsType=None):
+        with open(filename, mode='w', newline='', encoding="utf-8") as file:
+            fieldnames = self.limitFieldNames
+            worksheetWriter =csv.DictWriter(file, fieldnames=fieldnames)
+            worksheetWriter.writeheader()
+            if not wsType:
+                wsTypes = range(1,5)
+                for wsType in wsTypes:
+                    wsVal = self.ConvertWSTypeToStringValue(wsType)
+            try:
+                ws=self.Spreadsheet.GetWorksheetDefinition(plantId, wsType)[0]                              
+            except:
+                return 
+            if not ws.columns:
+                return 
+            columnDict = {}
+            for column in ws.columns:
+                if column.limits:
+                    columnDict[column.columnId]=[column.name, column.limits]
+            
+            for key in columnDict.keys():
+                for lim in columnDict[key][1]:
+                    worksheetWriter.writerow({
+                        'ColumnId':key,
+                        'ColumnName':columnDict[key][0],
+                        'LimitName':lim.name,
+                        'LimitType': self.ConvertLimitEnumToStringValue(lim.enumLimit),
+                        'LowValue':lim.lowValue.value,                        
+                        "LowOperation": self.LimitOperationToStringValue(lim.lowOperation),
+                        "HighValue": lim.highValue.value,
+                        "HighOperation": self.LimitOperationToStringValue(lim.highOperation),
+                        "LimitStartTime":lim.timeWindow.startTime.jsonDateTime.value,
+                        "LimitEndTime":lim.timeWindow.endTime.jsonDateTime.value,
+                        "NotificationsEnabled": lim.notificationFlag                                                
+                    })                                 
+                
     def __mapAndWriteLimitColumns(self, plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict, subtypeDict,  viewName=""):
         wsVal = self.ConvertWSTypeToStringValue(wsType)
         try:
@@ -196,14 +233,15 @@ class Exporter:
         if not ws.columns:
             return
         
-        configsInPlant = self.Configuration.GetSpreadsheetViews(plantId)
-        configsWithName = [config.configurationData for config in configsInPlant if json.loads(config.configurationData).get('name')==viewName]
-        columnNumbersInConfig=[json.loads(jsData).get('columnNumbers') for jsData in configsWithName]
-        columnsInView=[]
-        for lst in columnNumbersInConfig:
-            for item in lst:
-                columnsInView.append(item)
-        
+        if (viewName!=""):
+            configsInPlant = self.Configuration.GetSpreadsheetViews(plantId)
+            configsWithName = [config.configurationData for config in configsInPlant if json.loads(config.configurationData).get('name')==viewName]
+            columnNumbersInConfig=[json.loads(jsData).get('columnNumbers') for jsData in configsWithName]
+            columnsInView=[]
+            for lst in columnNumbersInConfig:
+                for item in lst:
+                    columnsInView.append(item)
+            
         columnDict = {}
         for column in ws.columns:
             if (viewName!=""):
@@ -345,7 +383,24 @@ class Exporter:
             return "Daily"            
         else: 
              return print("Enter valid worksheet type value (1= Fifteen minute, 2=Hourly, 3=FourHour, 4=Daily)") 
-           
+
+    def ConvertLimitEnumToStringValue(self, limitEnum):
+        if limitEnum ==1:
+            return "Regulatory"
+        elif limitEnum ==2:
+            return "Warning"   
+        elif limitEnum ==3:
+            return "Warning"                                  
+        elif limitEnum ==4:
+            return "Regulatory"  
+        elif limitEnum ==5:
+            return "Regulatory"            
+        elif limitEnum ==6:
+            return "Warning" 
+        elif limitEnum ==7:
+            return "Goal"         
+        else: 
+             return print("Enter valid worksheet type value (1-7)")            
     def LimitOperationToStringValue(self, limitOperation):
         if limitOperation ==1:
             return ">"
@@ -356,7 +411,7 @@ class Exporter:
         elif limitOperation ==4:
             return "=<"       
         elif limitOperation ==0:
-            return "Unknown"            
+            return "Undefined"            
         else: 
              return print(f"{limitOperation}Enter valid limit Operation value (1 is >, 2  is ≥  , 3 is < , 4 is ≤)")      
    
