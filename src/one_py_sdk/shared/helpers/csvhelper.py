@@ -61,18 +61,20 @@ class Exporter:
                 if updatedAfter!=None:
                     try: 
                         dateEntered =cell.cellDatas[0].auditEvents[-1].timeStamp.jsonDateTime.value
-                        dateEntered =self.ParseAuditTime(dateEntered)                                                                  
+                        dateEntered =self.ParseAuditTime(dateEntered)                                                                                        
                         if dateEntered> updatedAfter:                            
                             worksheetWriter.writerow({'Worksheet Type': wsVal, 
                                                 'Time': rowDict[vals.rowNumber],'ColumnName':numberMapping[cell.columnNumber][0],
                                                 'ColumnId':numberMapping[cell.columnNumber][1],
-                                                'Value': (cell.cellDatas[0].value.value),
+                                                'Value': cell.cellDatas[0].value.value,
                                                 'RowNumber':vals.rowNumber, 
                                                 'StringValue':cell.cellDatas[0].stringValue.value, 
                                                 'DateEntered':cell.cellDatas[0].auditEvents[-1].timeStamp.jsonDateTime.value, 
                                                 'ChangedUsing':self.EnumDataSourceToStringValue(cell.cellDatas[0].auditEvents[-1].enumDataSource)})
-                    except(IndexError):                    
+                    except IndexError:                  
                         pass
+                    except TypeError:
+                        print(f"Input date could not be parsed for 'ColumnName':{numberMapping[cell.columnNumber][0]},'Time': {rowDict[vals.rowNumber]}, 'Value': {cell.cellDatas[0].value.value}, 'DateEntered':{cell.cellDatas[0].auditEvents[-1].timeStamp.jsonDateTime.value} ")
                 else:
                     try:
                             worksheetWriter.writerow({'Worksheet Type': wsVal,
@@ -452,7 +454,7 @@ class Exporter:
             dateEntered =dateEntered.replace(tzinfo=timezone.utc)
         elif len(dateEntered)==26:                                                
             dateEntered =datetime.strptime(dateEntered[:-7],'%Y-%m-%dT%H:%M:%S')                            
-            dateEntered =dateEntered.replace(tzinfo=timezone.utc)
+            dateEntered =dateEntered.replace(tzinfo=timezone.utc)      
         return dateEntered
             
         
