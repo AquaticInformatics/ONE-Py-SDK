@@ -1,5 +1,6 @@
 import csv
 import json
+import logging
 from one_py_sdk.operations.spreadsheet import SpreadsheetApi
 from one_py_sdk.common.library import LibraryApi
 from one_py_sdk.enterprise.twin import DigitalTwinApi
@@ -74,7 +75,8 @@ class Exporter:
                     except IndexError:                  
                         pass
                     except TypeError:
-                        print(f"Input date could not be parsed for 'ColumnName':{numberMapping[cell.columnNumber][0]},'Time': {rowDict[vals.rowNumber]}, 'Value': {cell.cellDatas[0].value.value}, 'DateEntered':{cell.cellDatas[0].auditEvents[-1].timeStamp.jsonDateTime.value} ")
+                        logging.error(f"Input date could not be parsed for'Worksheet Type': {wsVal}, 'ColumnName':{numberMapping[cell.columnNumber][0]},'Time': {rowDict[vals.rowNumber]}, 'Value': {cell.cellDatas[0].value.value}, 'DateEntered':{cell.cellDatas[0].auditEvents[-1].timeStamp.jsonDateTime.value} ")
+                        logging.debug(len(dateEntered))                        
                 else:
                     try:
                             worksheetWriter.writerow({'Worksheet Type': wsVal,
@@ -454,7 +456,10 @@ class Exporter:
             dateEntered =dateEntered.replace(tzinfo=timezone.utc)
         elif len(dateEntered)==26:                                                
             dateEntered =datetime.strptime(dateEntered[:-7],'%Y-%m-%dT%H:%M:%S')                            
-            dateEntered =dateEntered.replace(tzinfo=timezone.utc)      
+            dateEntered =dateEntered.replace(tzinfo=timezone.utc)   
+        elif len(dateEntered)==25:
+            dateEntered =datetime.strptime(dateEntered[:-8],'%Y-%m-%dT%H:%M:%S')                            
+            dateEntered =dateEntered.replace(tzinfo=timezone.utc)   
         return dateEntered
             
         
