@@ -1,5 +1,6 @@
 import csv
 import json
+import logging
 from one_py_sdk.operations.spreadsheet import SpreadsheetApi
 from one_py_sdk.common.library import LibraryApi
 from one_py_sdk.enterprise.twin import DigitalTwinApi
@@ -61,19 +62,21 @@ class Exporter:
                 if updatedAfter!=None:
                     try: 
                         dateEntered =cell.cellDatas[0].auditEvents[-1].timeStamp.jsonDateTime.value
-                        dateEntered =datetime.strptime(dateEntered[:-2], '%Y-%m-%dT%H:%M:%S.%f')
-                        dateEntered =dateEntered.replace(tzinfo=timezone.utc)
-                        if dateEntered> updatedAfter:
+                        dateEntered =self.ParseAuditTime(dateEntered)                                                                                        
+                        if dateEntered> updatedAfter:                            
                             worksheetWriter.writerow({'Worksheet Type': wsVal, 
                                                 'Time': rowDict[vals.rowNumber],'ColumnName':numberMapping[cell.columnNumber][0],
                                                 'ColumnId':numberMapping[cell.columnNumber][1],
-                                                'Value': (cell.cellDatas[0].value.value),
+                                                'Value': cell.cellDatas[0].value.value,
                                                 'RowNumber':vals.rowNumber, 
                                                 'StringValue':cell.cellDatas[0].stringValue.value, 
                                                 'DateEntered':cell.cellDatas[0].auditEvents[-1].timeStamp.jsonDateTime.value, 
                                                 'ChangedUsing':self.EnumDataSourceToStringValue(cell.cellDatas[0].auditEvents[-1].enumDataSource)})
-                    except(IndexError):                    
+                    except IndexError:                  
                         pass
+                    except TypeError:
+                        logging.error(f"Input date could not be parsed for'Worksheet Type': {wsVal}, 'ColumnName':{numberMapping[cell.columnNumber][0]},'Time': {rowDict[vals.rowNumber]}, 'Value': {cell.cellDatas[0].value.value}, 'DateEntered':{cell.cellDatas[0].auditEvents[-1].timeStamp.jsonDateTime.value} ")
+                        logging.debug(len(dateEntered))                        
                 else:
                     try:
                             worksheetWriter.writerow({'Worksheet Type': wsVal,
@@ -114,7 +117,7 @@ class Exporter:
             else: 
                 self.__mapAndWriteColumns(plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict, subtypeDict, viewName)
      
-    def ExportLimitColumns(self, filename, plantId, wsType =None, viewName=""):                    
+    def ExportLimitColumns(self, filename, plantId, wsType =None, viewName="", allLimits =False):                    
         unitDict, paramDict,typeDict, subtypeDict = self.__mapUnitsAndParams()
         with open(filename, mode='w', newline='', encoding="utf-8") as file:
             fieldnames = self.columnFieldNames
@@ -124,11 +127,11 @@ class Exporter:
                 wsTypes = range(1,5)
                 for wsType in wsTypes:
                     try:
-                        self.__mapAndWriteLimitColumns(plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict, subtypeDict, viewName="")
+                        self.__mapAndWriteLimitColumns(plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict, subtypeDict,allLimits, viewName="" )
                     except:                         
                         continue
             else: 
-                self.__mapAndWriteLimitColumns(plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict, subtypeDict,  viewName="")  
+                self.__mapAndWriteLimitColumns(plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict, subtypeDict, allLimits, viewName="" )  
     
     def ExportLimits(self, filename, plantId, wsType=None):
         with open(filename, mode='w', newline='', encoding="utf-8") as file:
@@ -166,7 +169,7 @@ class Exporter:
                         "NotificationsEnabled": lim.notificationFlag                                                
                     })                                 
                 
-    def __mapAndWriteLimitColumns(self, plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict, subtypeDict,  viewName=""):
+    def __mapAndWriteLimitColumns(self, plantId, wsType, unitDict, paramDict, worksheetWriter, typeDict, subtypeDict, allLimits, viewName):
         wsVal = self.ConvertWSTypeToStringValue(wsType)
         try:
             ws=self.Spreadsheet.GetWorksheetDefinition(plantId, wsType)[0]                              
@@ -182,8 +185,11 @@ class Exporter:
         for column in columnDict.values():            
             try:
                 limit = column[6][0]
-                if limit.enumLimit ==5 or limit.enumLimit == 4 or limit.enumLimit == 1:
+                if allLimits:
                     limitDict[column[1]]= [limit.name, limit.lowValue.value, limit.lowOperation, limit.highValue.value, limit.highOperation,  limit.timeWindow.startTime.jsonDateTime.value, limit.timeWindow.endTime.jsonDateTime.value ]
+                else:
+                    if limit.enumLimit ==5 or limit.enumLimit == 4 or limit.enumLimit == 1:
+                        limitDict[column[1]]= [limit.name, limit.lowValue.value, limit.lowOperation, limit.highValue.value, limit.highOperation,  limit.timeWindow.startTime.jsonDateTime.value, limit.timeWindow.endTime.jsonDateTime.value ]
                                  
             except:
                 pass
@@ -435,6 +441,25 @@ class Exporter:
         else: 
              return print(f"{enumDataSource}Enter valid enumDataSource (valid values are 0-7))")      
    
-          
+    def ParseAuditTime(self, dateEntered):
+        if len(dateEntered)==24:            
+            dateEntered =datetime.strptime(dateEntered[:-5], '%Y-%m-%dT%H:%M:%S')                            
+            dateEntered =dateEntered.replace(tzinfo=timezone.utc)                            
+        elif len(dateEntered)==20:
+            dateEntered =datetime.strptime(dateEntered, '%Y-%m-%dT%H:%M:%SZ')
+            dateEntered =dateEntered.replace(tzinfo=timezone.utc)
+        elif len(dateEntered)==28:
+            dateEntered =datetime.strptime(dateEntered[:-2], '%Y-%m-%dT%H:%M:%S.%f')
+            dateEntered =dateEntered.replace(tzinfo=timezone.utc)
+        elif len(dateEntered)==27:
+            dateEntered =datetime.strptime(dateEntered, '%Y-%m-%dT%H:%M:%S.%fZ')
+            dateEntered =dateEntered.replace(tzinfo=timezone.utc)
+        elif len(dateEntered)==26:                                                
+            dateEntered =datetime.strptime(dateEntered[:-7],'%Y-%m-%dT%H:%M:%S')                            
+            dateEntered =dateEntered.replace(tzinfo=timezone.utc)   
+        elif len(dateEntered)==25:
+            dateEntered =datetime.strptime(dateEntered[:-8],'%Y-%m-%dT%H:%M:%S')                            
+            dateEntered =dateEntered.replace(tzinfo=timezone.utc)   
+        return dateEntered
             
         

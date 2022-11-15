@@ -4,4 +4,5 @@ __pycache__/
 one_interfaces*
 .vscode
 dist/*
-one_py_sdk.egg-info/*
+src/one_py_sdk.egg-info/*
+*.csv
