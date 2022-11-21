@@ -49,7 +49,7 @@ class Exporter:
             rowNumbers = rows.keys()
             rowValues = rows.values()  
         except(AttributeError):
-            return 
+            return        
         rowDict ={}
         for num in rowNumbers:
             rowDict[num]= str(GetDateFromRowNumber(num, ws.enumWorksheet))
@@ -61,8 +61,10 @@ class Exporter:
             for cell in vals.cells:                                                        
                 if updatedAfter!=None:
                     try: 
-                        dateEntered =cell.cellDatas[0].auditEvents[-1].timeStamp.jsonDateTime.value
-                        dateEntered =self.ParseAuditTime(dateEntered)                                                                                        
+                        dateEntered =cell.cellDatas[0].auditEvents[-1].timeStamp.jsonDateTime.value                        
+                        dateEntered =self.ParseAuditTime(dateEntered)
+                        if not updatedAfter.tzinfo:
+                            updatedAfter = updatedAfter.replace(tzinfo=timezone.utc)                                                                                                                                                 
                         if dateEntered> updatedAfter:                            
                             worksheetWriter.writerow({'Worksheet Type': wsVal, 
                                                 'Time': rowDict[vals.rowNumber],'ColumnName':numberMapping[cell.columnNumber][0],
@@ -75,8 +77,16 @@ class Exporter:
                     except IndexError:                  
                         pass
                     except TypeError:
+                        logging.exception("message")
+                        logging.error(f"Input date could not be parsed for'Worksheet Type': {wsVal}, 'ColumnName':{numberMapping[cell.columnNumber][0]},'Time': {rowDict[vals.rowNumber]}, 'Value': {cell.cellDatas[0].value.value}, 'DateEntered':{cell.cellDatas[0].auditEvents[-1].timeStamp.jsonDateTime.value} ")
+                        logging.debug(len(dateEntered))                              
+                    except ValueError:
+                        logging.exception("message")
                         logging.error(f"Input date could not be parsed for'Worksheet Type': {wsVal}, 'ColumnName':{numberMapping[cell.columnNumber][0]},'Time': {rowDict[vals.rowNumber]}, 'Value': {cell.cellDatas[0].value.value}, 'DateEntered':{cell.cellDatas[0].auditEvents[-1].timeStamp.jsonDateTime.value} ")
                         logging.debug(len(dateEntered))                        
+                    except:
+                        logging.exception("message")
+                        logging.error(f"Input date could not be parsed for'Worksheet Type': {wsVal}, 'ColumnName':{numberMapping[cell.columnNumber][0]},'Time': {rowDict[vals.rowNumber]}, 'Value': {cell.cellDatas[0].value.value}, 'DateEntered':{cell.cellDatas[0].auditEvents[-1].timeStamp.jsonDateTime.value} ")                                  
                 else:
                     try:
                             worksheetWriter.writerow({'Worksheet Type': wsVal,
