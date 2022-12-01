@@ -5,6 +5,7 @@ from one_py_sdk.operations.spreadsheet import SpreadsheetApi
 from one_py_sdk.common.library import LibraryApi
 from one_py_sdk.enterprise.twin import DigitalTwinApi
 from one_py_sdk.common.configuration import ConfigurationApi
+from one_py_sdk.historian.data import HistorianApi
 from one_py_sdk.shared.helpers.datetimehelper import *
 from datetime import datetime, timezone
 
@@ -15,12 +16,30 @@ class Exporter:
         self.Spreadsheet = SpreadsheetApi(env, auth)
         self.Library = LibraryApi(env, auth)
         self.DigitalTwin = DigitalTwinApi(env, auth)
-        self.Configuration = ConfigurationApi(env, auth)                                                      
+        self.Configuration = ConfigurationApi(env, auth)
+        self.Historian = HistorianApi(env, auth)                                                      
     dataFieldNames = ['Worksheet Type', 'Time', 'ColumnName','ColumnId','RowNumber', 'Value', 'StringValue', 'DateEntered', 'ChangedUsing']    
-    columnFieldNames =['Worksheet Type','ColumnNumber', 'Name', 'ParameterId','LocationId','LocationName','LocationType', 'LocationSubtype', 'Path', 
+    columnFieldNames =['Worksheet Type','ColumnNumber', 'Name', 'ParameterId','LocationId','LocationName','LocationType', 'LocationSubtype', 'Path', 'Latitude','Longitude',
                      'ParameterTranslation','ColumnId', 'UnitId', 'UnitTranslation','LastPopulatedDate','DataBinding', 
-                     'LimitName',"LowValue", "LowOperation", "HighValue", "HighOperation", "LimitStartTime", "LimitEndTime" ]     
+                     'LimitName',"LowValue", "LowOperation", "HighValue", "HighOperation", "LimitStartTime", "LimitEndTime" ] 
+    historianDataFieldNames =["DateUTC","Value", "String Value", 'Property Bag', "CreatedById", "CreatedOn", "ModifiedById","ModifiedOn", ]    
     limitFieldNames =["ColumnId","ColumnName", 'LimitName',"LimitType","LowValue", "LowOperation", "HighValue", "HighOperation", "LimitStartTime", "LimitEndTime", "NotificationsEnabled" ]         
+    def ExportHistorianTwin(self, filename, twinId, startDate, endDate):
+        fieldnames= self.historianDataFieldNames
+        with open(filename, mode='w', newline='', encoding="utf-8") as file:
+            worksheetWriter =csv.DictWriter(file,fieldnames=fieldnames)
+            worksheetWriter.writeheader()
+            historianData = self.Historian.GetHistorianDataRange(twinId, startDate, endDate)
+            for datum in historianData:
+                worksheetWriter.writerow({"DateUTC": datum.dateTimeUTC.jsonDateTime.value,
+                                          "Value":datum.value.value,
+                                          "String Value":datum.stringValue.value,
+                                          'Property Bag':datum.propertyBag.value,
+                                          "CreatedById":datum.recordAuditInfo.createdById,
+                                          "CreatedOn":datum.recordAuditInfo.createdOn.jsonDateTime.value,
+                                          "ModifiedById":datum.recordAuditInfo.modifiedById,
+                                          "ModifiedOn":datum.recordAuditInfo.modifiedOn.jsonDateTime.value})
+    
     def ExportWorksheet(self, filename, plantId, startDate, endDate, updatedAfter=None, wsType=None): 
         with open(filename, mode='w', newline='', encoding="utf-8") as file:        
             fieldnames = self.dataFieldNames
@@ -212,7 +231,9 @@ class Exporter:
                 except:
                     dataSourceBinding=""
                 locationSubtype = subtypeDict[twinDict[columnDict[key][5]][5]][1]
-                locationType =typeDict[twinDict[columnDict[key][5]][4]][1]      
+                locationType =typeDict[twinDict[columnDict[key][5]][4]][1]
+                lat =twinDict[columnDict[key][1]][6]
+                long =twinDict[columnDict[key][1]][7]   
                 worksheetWriter.writerow({ 'ColumnNumber': key, 
                                         'Name':columnDict[key][0], 
                                         'ColumnId': columnDict[key][1], 
@@ -226,6 +247,8 @@ class Exporter:
                                         'LocationType':locationType,
                                         'ParameterTranslation':paramDict[columnDict[key][2]][1], 
                                         "Path": twinDict[columnDict[key][1]][2],
+                                        "Latitude":lat,
+                                        "Longitude": long, 
                                         'LimitName' :  limitDict[columnDict[key][1]][0], 
                                         "LowValue": limitDict[columnDict[key][1]][1], 
                                         "LowOperation": self.LimitOperationToStringValue(limitDict[columnDict[key][1]][2]),
@@ -283,7 +306,9 @@ class Exporter:
             except:
                 dataSourceBinding=""
             try:
-                locationSubtype = subtypeDict[twinDict[columnDict[key][5]][5]][1]
+                locationSubtype = subtypeDict[twinDict[columnDict[key][5]][5]][1]                
+                lat =twinDict[columnDict[key][1]][6]
+                long =twinDict[columnDict[key][1]][7]
                 worksheetWriter.writerow({ 'ColumnNumber': key, 
                                         'Name':columnDict[key][0], 
                                         'ColumnId': columnDict[key][1], 
@@ -296,7 +321,9 @@ class Exporter:
                                         'LocationId':columnDict[key][5],
                                         'LocationType':locationType,
                                         'ParameterTranslation':paramDict[columnDict[key][2]][1], 
-                                        "Path": twinDict[columnDict[key][1]][2],                                        
+                                        "Path": twinDict[columnDict[key][1]][2],
+                                        "Latitude":lat,
+                                        "Longitude": long,                                                                                    
                                         'LimitName' :  limitDict[columnDict[key][1]][0], 
                                         "LowValue": limitDict[columnDict[key][1]][1], 
                                         "LowOperation": self.LimitOperationToStringValue(limitDict[columnDict[key][1]][2]),
@@ -309,6 +336,8 @@ class Exporter:
                                         })
             except (KeyError):
                 locationSubtype = subtypeDict[twinDict[columnDict[key][5]][5]][1]
+                lat =twinDict[columnDict[key][1]][6]
+                long =twinDict[columnDict[key][1]][7]                
                 worksheetWriter.writerow({ 'ColumnNumber': key, 
                                             'Name':columnDict[key][0], 
                                             'ColumnId': columnDict[key][1], 
@@ -322,6 +351,8 @@ class Exporter:
                                             'LocationType':locationType,
                                             'ParameterTranslation':paramDict[columnDict[key][2]][1], 
                                             "Path": twinDict[columnDict[key][1]][2],
+                                            "Latitude":lat,
+                                            "Longitude": long,
                                             "LocationSubtype": locationSubtype,
                                             "DataBinding":dataSourceBinding     
                                             })
@@ -372,20 +403,40 @@ class Exporter:
         twins.MergeFrom(self.DigitalTwin.GetDescendantsByRefByCategory(plantId, 2,False))
         twins= twins.items      
         twinDict ={}
-        for twin in twins:
-            twinDict[twin.twinReferenceId.value]=[twin.parentTwinReferenceId.value, twin.name.value, None, None, twin.twinTypeId, twin.twinSubTypeId.value]                
+        lat =""
+        long=""
+        for twin in twins:            
+            lat =twin.geography.point2d.y
+            long = twin.geography.point2d.x
+            twinDict[twin.twinReferenceId.value]=[twin.parentTwinReferenceId.value, twin.name.value, None, None, twin.twinTypeId, twin.twinSubTypeId.value, lat, long]
+                            
         for key in columnDict.keys():
             twinId=columnDict[key][1]
             path =[]
+            twinChain =[]
             pathString=""
             while (twinId!=plantId):             
                 path.append(twinDict[twinId][1])
-                twinId =twinDict[twinId][0]                                
+                twinChain.append(twinId)
+                twinId =twinDict[twinId][0]                                                    
             path.append(twinDict[twinId][1])
+            twinChain.append(plantId)            
+            for twinRef in twinChain:
+                if not twinDict[twinRef][6] or not twinDict[twinRef][7]:                 
+                    lat = ""  
+                    long = ""     
+                else:
+                    lat =twinDict[twinRef][6]                                                   
+                    long =twinDict[twinRef][7]
+                if lat and long:
+                    break
+            
+            twinDict[twinChain[0]][6]=lat
+            twinDict[twinChain[0]][7]=long                          
             twinDict[columnDict[key][1]][3]=path[1]
             while (path):
                 pathString= f'{pathString}/{path.pop()}'
-            twinDict[columnDict[key][1]][2]=pathString
+            twinDict[columnDict[key][1]][2]=pathString            
         return twinDict
     
     def ConvertWSTypeToStringValue(self, wsType):

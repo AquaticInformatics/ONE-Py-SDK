@@ -27,6 +27,14 @@ class DigitalTwinApi:
             return response 
         return json.loads(response.content.DigitalTwins.items[0].twinData.value).get('measurement')      
     
+    def GetTwinData(self, twinRefId):
+        url = self.Environment+self.AppUrl+"DigitalTwin/Ref/"+twinRefId        
+        headers = {'Authorization': self.Authentication.Token.access_token, "Accept":"application/x-protobuf"}
+        response = DeserializeResponse(requests.get(url, headers=headers))              
+        if response.errors:            
+            return response 
+        return json.loads(response.content.DigitalTwins.items[0].twinData.value) 
+    
     def TwinMeasurements(self, twinRefId, twinMeasurements):
         try:         
              usefulDictionary ={"Telemetry Id": twinRefId,
@@ -77,6 +85,7 @@ class DigitalTwinApi:
             return response.content.DigitalTwins.items
         else:
             return response.content.DigitalTwins    
+        
     def GetDescendantsBySubType(self, twinRefId:str, twinSubtypeId:str):
         requestId =uuid.uuid4()
         url = self.Environment+self.AppUrl+"DigitalTwin/Ref/"+twinRefId+"/Subtype/"+twinSubtypeId+"/Descendants?requestId="+str(requestId)        
