@@ -8,44 +8,13 @@ from one_interfaces import row_pb2 as row
 from one_interfaces import cell_pb2 as cell   
 from one_interfaces import celldata_pb2 as celldata   
 from one_interfaces import auditevent_pb2 as audit
-
+from one_interfaces import note_pb2 as note
 
 class SpreadsheetApi:
     def __init__(self, env: str, auth: AuthenticationApi):
         self.Environment = env
         self.Auth = auth
         self.AppUrl = "/operations/spreadsheet/v1/"
-
-    def SaveRows (self, plantId, wsType, rows):
-        url = f"{self.Environment}{self.AppUrl}{plantId}/worksheet/{str(wsType)}/rows"
-        headers = {'Authorization': self.Auth.Token.access_token,
-                   "Content-Type": "application/x-protobuf", "Accept": "application/x-protobuf" }        
-        response = DeserializeResponse(requests.post(url, headers=headers, data=rows.SerializeToString()))
-        return response
-    
-    def RowBuilder(self, valueDict, wsType):
-        r = row.Rows()        
-        for key in valueDict.keys():
-            r2 =row.Row() 
-            for item in valueDict[key]:
-                for k in item.keys():        
-                    cd = celldata.CellData()
-                    c = cell.Cell()
-                    s =audit.AuditEvent()
-                    s.id = str(uuid.uuid4())
-                    s.userId = self.Auth.User.id
-                    s.timeStamp.jsonDateTime.value = ToJsonTicksDateTime(datetime.utcnow)
-                    s.details = "Python SDK import"
-                    s.enumDataSource = 5
-                    s.enumDomainSource = 2
-                    cd.auditEvents.append(s)
-                    cd.stringValue.value=item[k]             
-                    c.columnNumber=k
-                    c.cellDatas.append(cd)
-                    r2.rowNumber = GetRowNumber(key, wsType)
-                    r2.cells.append(c) 
-                    r.items[r2.rowNumber].MergeFrom(r2)     
-        return r
     
     def GetWorksheetColumnIds(self, plantId, wsType):        
         url = self.Environment + self.AppUrl + plantId + \
@@ -193,3 +162,4 @@ class SpreadsheetApi:
             startRow = newEndRow+1
         rows.MergeFrom(self.__getRows(plantId, wsType, startRow, endRow))
         return rows.items
+    
