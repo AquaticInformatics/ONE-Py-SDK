@@ -21,7 +21,7 @@ class ReportApi:
             return response
         return response.content.ReportDefinitions.items
     
-    def GetReportColumnsIdsByPlant(self, plantId):        
+    def GetColumnIdsByPlant(self, plantId):        
         reportDefs = [json.loads(report.reportDefinitionJson.value) for report in self.GetReportDefinitions(plantId)]
         columns = [d.get('columns') for d in reportDefs]
         ids =[]
@@ -43,7 +43,7 @@ class ReportApi:
             return response
         return response.content.ReportDefinitions.items
     
-    def GetColumnsIdsByReportId(self, reportId):        
+    def GetColumnIdsByReportId(self, reportId):        
         reportDefs = [json.loads(report.reportDefinitionJson.value) for report  in self.GetReportDefinitionById(reportId)]
         columns = [d.get('columns') for d in reportDefs]
         ids =[]
@@ -52,7 +52,7 @@ class ReportApi:
                 ids.append(col.get('id'))     
         return ids
     
-    def GetColumnsIdsByReportName(self, reportName, plantId =None):
+    def GetColumnIdsByReportName(self, reportName, plantId =None):
         try:
             reportDefs = [json.loads(report.reportDefinitionJson.value) for report  in self.GetReportDefinitions(plantId) if report.name.value== reportName]           
         except:           
