@@ -8,6 +8,7 @@ from one_py_sdk.historian.data import HistorianApi
 from one_py_sdk.operations.spreadsheet import SpreadsheetApi
 from one_py_sdk.common.library import LibraryApi
 from one_py_sdk.enterprise.twin import DigitalTwinApi
+from one_py_sdk.enterprise.report import ReportApi
 from one_py_sdk.common.configuration import ConfigurationApi
 from one_py_sdk.shared.constants import *
 from one_py_sdk.enterprise.authentication import AuthenticationApi
@@ -31,6 +32,7 @@ class ClientSdk:
         self.Exporter = Exporter(self.Environment, self.Authentication)
         self.Configuration = ConfigurationApi(
             self.Environment, self.Authentication)
+        self.Report = ReportApi(self.Environment, self.Authentication)
         if cacheTimeout != None:
             requests_cache.install_cache(
                 "client-cache", backend="memory", expire_after=cacheTimeout)
