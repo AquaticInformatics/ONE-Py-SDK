@@ -4,59 +4,88 @@ import requests
 from one_py_sdk.enterprise.authentication import AuthenticationApi
 from one_py_sdk.shared.helpers.protobufhelper import DeserializeResponse
 from one_py_sdk.shared.helpers.datetimehelper import *
+from one_py_sdk.shared.helpers.helpers import IsValidGuid
+from one_py_sdk.shared.models.datapoint import DataPoint
 from one_interfaces import row_pb2 as row
-from one_interfaces import cell_pb2 as cell   
-from one_interfaces import celldata_pb2 as celldata   
+from one_interfaces import cell_pb2 as cell
+from one_interfaces import celldata_pb2 as celldata
 from one_interfaces import auditevent_pb2 as audit
 from one_interfaces import note_pb2 as note
+
 
 class SpreadsheetApi:
     def __init__(self, env: str, auth: AuthenticationApi):
         self.Environment = env
         self.Auth = auth
         self.AppUrl = "/operations/spreadsheet/v1/"
-    
-    def SaveRows (self, plantId, wsType, rows):
+
+    def ImportDictionary(self, plantId, valueDict, wsType):
+        rows = self.__rowBuilder(valueDict, wsType, plantId)
+        return self.SaveRows(plantId, wsType, rows)
+
+    def SaveRows(self, plantId, wsType, rows):
         url = f"{self.Environment}{self.AppUrl}{plantId}/worksheet/{str(wsType)}/rows"
         headers = {'Authorization': self.Auth.Token.access_token,
-                   "Content-Type": "application/x-protobuf", "Accept": "application/x-protobuf" }        
-        response = DeserializeResponse(requests.post(url, headers=headers, data=rows.SerializeToString()))
+                   "Content-Type": "application/x-protobuf", "Accept": "application/x-protobuf"}
+        response = DeserializeResponse(requests.post(
+            url, headers=headers, data=rows.SerializeToString()))
         return response
-    
-    def RowBuilder(self, valueDict, wsType):
-        r = row.Rows()        
+
+    def __rowBuilder(self, valueDict: dict[datetime: [DataPoint]], wsType, plantId):
+        r = row.Rows()
+        map = self.MapColumnGuidToIntId(plantId, wsType)
         for key in valueDict.keys():
-            r2 =row.Row() 
-            for item in valueDict[key]:
-                for k in item.keys():        
-                    cd = celldata.CellData()
-                    c = cell.Cell()
-                    if item[k][1]:
-                        n= note.Note()
-                        n.text =item[k][1]
-                        n.userId = self.Auth.User.id
-                        n.timeStamp.jsonDateTime.value = ToJsonTicksDateTime(datetime.utcnow())
-                        c.notes.append(n)                    
-                    s =audit.AuditEvent()
-                    s.id = str(uuid.uuid4())
+            r2 = row.Row()
+            r2.rowNumber = GetRowNumber(key, wsType)
+            for dataPoint in valueDict[key]:
+                cd = celldata.CellData()
+                c = cell.Cell()
+                if IsValidGuid(dataPoint.columnId):
+                    c.columnNumber = map[dataPoint.columnId]
+                else:
+                    c.columnNumber = dataPoint.columnId
+                try:
+                    if dataPoint.note != "":
+                        n = note.Note()
+                        n.text = dataPoint.note
+                        if dataPoint.auditUserId != "":
+                            n.userId = dataPoint.auditUserId
+                        else:
+                            n.userId = self.Auth.User.id
+
+                        n.timeStamp.jsonDateTime.value = ToJsonTicksDateTime(
+                            datetime.utcnow()).jsonDateTime.value
+                        c.notes.append(n)
+                except:
+                    pass
+                s = audit.AuditEvent()
+                s.id = str(uuid.uuid4())
+                if dataPoint.auditUserId != "":
+                    s.userId = dataPoint.auditUserId
+                    cd.dataSourceBinding.bindingId = dataPoint.auditUserId
+                else:
                     s.userId = self.Auth.User.id
-                    s.timeStamp.jsonDateTime.value = ToJsonTicksDateTime(datetime.utcnow())
-                    s.details = "Python SDK import"
-                    s.enumDataSource = 5
-                    s.enumDomainSource = 2
-                    cd.auditEvents.append(s)
-                    cd.stringValue.value=item[k][0]                              
-                    c.columnNumber=k     
-                    cd.dataSourceBinding.dataSource=5
-                    cd.dataSourceBinding.enumSamplingStatistic = 0
-                    cd.dataSourceBinding.bindingId = self.Auth.User.id              
-                    c.cellDatas.append(cd)
-                    r2.rowNumber = GetRowNumber(key, wsType)
-                    r2.cells.append(c) 
-                    r.items[r2.rowNumber].MergeFrom(r2)     
+                    cd.dataSourceBinding.bindingId = self.Auth.User.id
+                if dataPoint.auditTimeStamp != "":
+                    s.timeStamp.jsonDateTime.value = ToJsonTicksDateTime(
+                        dataPoint.auditTimeStamp).jsonDateTime.value
+                else:
+                    s.timeStamp.jsonDateTime.value = ToJsonTicksDateTime(
+                        datetime.utcnow()).jsonDateTime.value
+                s.details = "Python SDK import"
+                s.enumDataSource = 5
+                s.enumDomainSource = 2
+                cd.isLocked = dataPoint.isLocked
+                cd.auditEvents.append(s)
+                cd.stringValue.value = dataPoint.stringValue
+                cd.dataSourceBinding.dataSource = 5
+                cd.dataSourceBinding.enumSamplingStatistic = 0
+                c.cellDatas.append(cd)
+                r2.cells.append(c)
+                r.items[r2.rowNumber].CopyFrom(r2)
         return r
-    
-    def GetWorksheetColumnIds(self, plantId, wsType):        
+
+    def GetWorksheetColumnIds(self, plantId, wsType):
         url = self.Environment + self.AppUrl + plantId + \
             "/worksheet/"+str(wsType)+"/definition"
         headers = {'Authorization': self.Auth.Token.access_token,
@@ -67,6 +96,19 @@ class SpreadsheetApi:
         columnIds = [
             col.columnId for col in response.content.worksheetDefinitions.items[0].columns if col.isActive == True]
         return columnIds
+
+    def MapColumnGuidToIntId(self, plantId, wsType):
+        url = self.Environment + self.AppUrl + plantId + \
+            "/worksheet/"+str(wsType)+"/definition"
+        headers = {'Authorization': self.Auth.Token.access_token,
+                   "Accept": "application/x-protobuf"}
+        response = DeserializeResponse(requests.get(url, headers=headers))
+        if response.errors:
+            return response
+        guidToIntMap = {}
+        for col in response.content.worksheetDefinitions.items[0].columns:
+            guidToIntMap[col.columnId] = col.columnNumber
+        return guidToIntMap
 
     def GetWorksheetColumnNumbers(self, plantId, wsType):
         url = self.Environment + self.AppUrl + plantId + \
@@ -164,7 +206,7 @@ class SpreadsheetApi:
                    "Accept": "application/x-protobuf"}
         response = DeserializeResponse(requests.get(url, headers=headers))
         if response.errors:
-            return response        
+            return response
         return response.content.rows
 
     def GetRowsByDay(self, plantId, wsType, date: datetime, columns=None, viewId=None):
@@ -202,4 +244,3 @@ class SpreadsheetApi:
             startRow = newEndRow+1
         rows.MergeFrom(self.__getRows(plantId, wsType, startRow, endRow))
         return rows.items
-    

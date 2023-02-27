@@ -3,8 +3,7 @@ from one_interfaces import jsonTicksDateTime_pb2 as jsonTicksTime
 
 
 def GetRowNumber(date: datetime, wsType):
-    if not date.tzinfo:
-        date = date.replace(tzinfo=timezone.utc)
+    date = date.replace(tzinfo=timezone.utc)
     BaseTime = datetime(1900, 1, 1, 0, 0, 0, 0, timezone.utc)
     diffTime = date - BaseTime
     windowSize = TimeSpanOfWorksheetType(wsType)
