@@ -1,6 +1,7 @@
+from collections import OrderedDict
 from datetime import datetime
 import uuid
-import requests
+from requests import Session
 from one_py_sdk.enterprise.authentication import AuthenticationApi
 from one_py_sdk.shared.helpers.protobufhelper import DeserializeResponse
 from one_py_sdk.shared.helpers.datetimehelper import *
@@ -14,83 +15,99 @@ from one_interfaces import note_pb2 as note
 
 
 class SpreadsheetApi:
-    def __init__(self, env: str, auth: AuthenticationApi):
+    def __init__(self, env: str, auth: AuthenticationApi, session: Session = None):
         self.Environment = env
         self.Auth = auth
         self.AppUrl = "/operations/spreadsheet/v1/"
+        if not session:
+            self.Session = Session()
+            self.Session.headers = {"Content-Type": "application/x-protobuf", "Accept": "application/x-protobuf"}            
+        else:
+            self.Session = session
+        
+        
 
     def ImportDictionary(self, plantId, valueDict, wsType):
         rows = self.__rowBuilder(valueDict, wsType, plantId)
         return self.SaveRows(plantId, wsType, rows)
 
     def SaveRows(self, plantId, wsType, rows):
-        url = f"{self.Environment}{self.AppUrl}{plantId}/worksheet/{str(wsType)}/rows"
-        headers = {'Authorization': self.Auth.Token.access_token,
-                   "Content-Type": "application/x-protobuf", "Accept": "application/x-protobuf"}
-        response = DeserializeResponse(requests.post(
-            url, headers=headers, data=rows.SerializeToString()))
+        url = f"{self.Environment}{self.AppUrl}{plantId}/worksheet/{str(wsType)}/rows"        
+        response = DeserializeResponse(self.Session.post(
+            url, data=rows.SerializeToString()))
         return response
 
     def __rowBuilder(self, valueDict: dict[datetime: [DataPoint]], wsType, plantId):
         r = row.Rows()
+        sortedValueDict = OrderedDict(valueDict.items())
         map = self.MapColumnGuidToIntId(plantId, wsType)
+        rowNumbers=[]
         for key in valueDict.keys():
-            r2 = row.Row()
-            r2.rowNumber = GetRowNumber(key, wsType)
-            for dataPoint in valueDict[key]:
-                cd = celldata.CellData()
-                c = cell.Cell()
-                if IsValidGuid(dataPoint.columnId):
-                    c.columnNumber = map[dataPoint.columnId]
-                else:
-                    c.columnNumber = dataPoint.columnId
-                try:
-                    if dataPoint.note != "":
-                        n = note.Note()
-                        n.text = dataPoint.note
-                        if dataPoint.auditUserId != "":
-                            n.userId = dataPoint.auditUserId
-                        else:
-                            n.userId = self.Auth.User.id
-
-                        n.timeStamp.jsonDateTime.value = ToJsonTicksDateTime(
-                            datetime.utcnow()).jsonDateTime.value
-                        c.notes.append(n)
-                except:
-                    pass
-                s = audit.AuditEvent()
-                s.id = str(uuid.uuid4())
-                if dataPoint.auditUserId != "":
-                    s.userId = dataPoint.auditUserId
-                    cd.dataSourceBinding.bindingId = dataPoint.auditUserId
-                else:
-                    s.userId = self.Auth.User.id
-                    cd.dataSourceBinding.bindingId = self.Auth.User.id
-                if dataPoint.auditTimeStamp != "":
-                    s.timeStamp.jsonDateTime.value = ToJsonTicksDateTime(
-                        dataPoint.auditTimeStamp).jsonDateTime.value
-                else:
-                    s.timeStamp.jsonDateTime.value = ToJsonTicksDateTime(
-                        datetime.utcnow()).jsonDateTime.value
-                s.details = "Python SDK import"
-                s.enumDataSource = 5
-                s.enumDomainSource = 2
-                cd.isLocked = dataPoint.isLocked
-                cd.auditEvents.append(s)
-                cd.stringValue.value = dataPoint.stringValue
-                cd.dataSourceBinding.dataSource = 5
-                cd.dataSourceBinding.enumSamplingStatistic = 0
-                c.cellDatas.append(cd)
-                r2.cells.append(c)
-                r.items[r2.rowNumber].CopyFrom(r2)
+            rowNumber = GetRowNumber(key, wsType)            
+            for dataPoint in sortedValueDict[key]:
+                    cd = celldata.CellData()
+                    c = cell.Cell()
+                    if IsValidGuid(dataPoint.columnId):
+                        c.columnNumber = map[dataPoint.columnId]
+                    else:
+                        c.columnNumber = dataPoint.columnId
+                    try:
+                        if dataPoint.note != "":
+                            n = note.Note()
+                            n.text = dataPoint.note
+                            if dataPoint.auditUserId != "":
+                                n.userId = dataPoint.auditUserId
+                            else:
+                                n.userId = self.Auth.User.id
+                            n.timeStamp.jsonDateTime.value = ToJsonTicksDateTime(
+                                datetime.utcnow()).jsonDateTime.value
+                            c.notes.append(n)
+                    except:
+                        pass
+                    s = audit.AuditEvent()
+                    s.id = str(uuid.uuid4())
+                    if dataPoint.auditUserId != "":
+                        s.userId = dataPoint.auditUserId
+                        cd.dataSourceBinding.bindingId = dataPoint.auditUserId
+                    else:
+                        s.userId = self.Auth.User.id
+                        cd.dataSourceBinding.bindingId = self.Auth.User.id
+                    if dataPoint.auditTimeStamp != "":
+                        s.timeStamp.jsonDateTime.value = ToJsonTicksDateTime(
+                            dataPoint.auditTimeStamp).jsonDateTime.value
+                    else:
+                        s.timeStamp.jsonDateTime.value = ToJsonTicksDateTime(
+                            key).jsonDateTime.value
+                    s.details = "Python SDK import"
+                    s.enumDataSource = 5
+                    s.enumDomainSource = 2
+                    cd.isLocked = dataPoint.isLocked
+                    cd.auditEvents.append(s)
+                    cd.stringValue.value = dataPoint.stringValue
+                    cd.dataSourceBinding.dataSource = 5
+                    cd.dataSourceBinding.enumSamplingStatistic = 0                              
+                    if rowNumber not in rowNumbers:
+                        rowNumbers.append(rowNumber)
+                        r2 = row.Row()                
+                        r2.rowNumber = rowNumber 
+                        c.cellDatas.append(cd)                        
+                        r2.cells.append(c)
+                        r.items[r2.rowNumber].CopyFrom(r2)
+                    else:
+                        itemAdded = False
+                        r2= r.items[rowNumber]
+                        for item in r2.cells:
+                            if item.columnNumber == c.columnNumber:                                
+                                item.cellDatas.insert(0, cd)
+                                itemAdded =True
+                        if not itemAdded:
+                            r2.cells.append(c)      
         return r
 
     def GetWorksheetColumnIds(self, plantId, wsType):
         url = self.Environment + self.AppUrl + plantId + \
-            "/worksheet/"+str(wsType)+"/definition"
-        headers = {'Authorization': self.Auth.Token.access_token,
-                   "Accept": "application/x-protobuf"}
-        response = DeserializeResponse(requests.get(url, headers=headers))
+            "/worksheet/"+str(wsType)+"/definition"        
+        response = DeserializeResponse(self.Session.get(url))
         if response.errors:
             return response
         columnIds = [
@@ -99,10 +116,8 @@ class SpreadsheetApi:
 
     def MapColumnGuidToIntId(self, plantId, wsType):
         url = self.Environment + self.AppUrl + plantId + \
-            "/worksheet/"+str(wsType)+"/definition"
-        headers = {'Authorization': self.Auth.Token.access_token,
-                   "Accept": "application/x-protobuf"}
-        response = DeserializeResponse(requests.get(url, headers=headers))
+            "/worksheet/"+str(wsType)+"/definition"        
+        response = DeserializeResponse(self.Session.get(url))
         if response.errors:
             return response
         guidToIntMap = {}
@@ -112,10 +127,8 @@ class SpreadsheetApi:
 
     def GetWorksheetColumnNumbers(self, plantId, wsType):
         url = self.Environment + self.AppUrl + plantId + \
-            "/worksheet/"+str(wsType)+"/definition"
-        headers = {'Authorization': self.Auth.Token.access_token,
-                   "Accept": "application/x-protobuf"}
-        response = DeserializeResponse(requests.get(url, headers=headers))
+            "/worksheet/"+str(wsType)+"/definition"        
+        response = DeserializeResponse(self.Session.get(url))
         if response.errors:
             return response
         columnNumbers = [
@@ -124,47 +137,38 @@ class SpreadsheetApi:
 
     def GetWorksheetDefinition(self, plantId, wsType):
         url = self.Environment + self.AppUrl + plantId + \
-            "/worksheet/"+str(wsType)+"/definition"
-        headers = {'Authorization': self.Auth.Token.access_token,
-                   "Accept": "application/x-protobuf"}
-        response = DeserializeResponse(requests.get(url, headers=headers))
+            "/worksheet/"+str(wsType)+"/definition"        
+        response = DeserializeResponse(self.Session.get(url))
         if response.errors:
             return response
         return response.content.worksheetDefinitions.items
 
     def GetSpreadsheetDefinition(self, plantId):
         url = f'{self.Environment}{self.AppUrl}{plantId}/definition'
-        headers = {'Authorization': self.Auth.Token.access_token,
-                   "Accept": "application/x-protobuf"}
-        response = DeserializeResponse(requests.get(url, headers=headers))
+        
+        response = DeserializeResponse(self.Session.get(url))
         return response.content.spreadsheetDefinitions.items
 
     def GetColumnByDay(self, plantId, wsType, columnId, date: datetime):
         url = self.Environment + self.AppUrl + plantId + \
-            f'/worksheet/{str(wsType)}/column/{columnId}/byday/{date.year}/{date.month}/{date.day}'
-        headers = {'Authorization': self.Auth.Token.access_token,
-                   "Accept": "application/x-protobuf"}
-        response = DeserializeResponse(requests.get(url, headers=headers))
+            f'/worksheet/{str(wsType)}/column/{columnId}/byday/{date.year}/{date.month}/{date.day}'        
+        response = DeserializeResponse(self.Session.get(url))
         if response.errors:
             return response
         return response.content.measurements.items
 
     def GetColumnByMonth(self, plantId: str, wsType: int, columnId: int, date: datetime):
         url = self.Environment + self.AppUrl + plantId + \
-            f'/worksheet/{str(wsType)}/column/{columnId}/bymonth/{date.year}/{date.month}'
-        headers = {'Authorization': self.Auth.Token.access_token,
-                   "Accept": "application/x-protobuf"}
-        response = DeserializeResponse(requests.get(url, headers=headers))
+            f'/worksheet/{str(wsType)}/column/{columnId}/bymonth/{date.year}/{date.month}'        
+        response = DeserializeResponse(self.Session.get(url))
         if response.errors:
             return response
         return response.content.measurements.items
 
     def GetColumnByYear(self, plantId, wsType, columnId, date: datetime):
         url = self.Environment + self.AppUrl + plantId + \
-            f'/worksheet/{str(wsType)}/column/{columnId}/byyear/{date.year}'
-        headers = {'Authorization': self.Auth.Token.access_token,
-                   "Accept": "application/x-protobuf"}
-        response = DeserializeResponse(requests.get(url, headers=headers))
+            f'/worksheet/{str(wsType)}/column/{columnId}/byyear/{date.year}'        
+        response = DeserializeResponse(self.Session.get(url))
         if response.errors:
             return response
         return response.content.measurements.items
@@ -182,9 +186,8 @@ class SpreadsheetApi:
             url = url+f'&columns={columns}'
         if viewId:
             url = url+f'&viewId={viewId}'
-        headers = {'Authorization': self.Auth.Token.access_token,
-                   "Accept": "application/x-protobuf"}
-        response = DeserializeResponse(requests.get(url, headers=headers))
+        
+        response = DeserializeResponse(self.Session.get(url))
         if response.errors:
             return response
         return response.content.rows.items
@@ -202,9 +205,8 @@ class SpreadsheetApi:
             url = url+f'&columns={columns}'
         if viewId:
             url = url+f'&viewId={viewId}'
-        headers = {'Authorization': self.Auth.Token.access_token,
-                   "Accept": "application/x-protobuf"}
-        response = DeserializeResponse(requests.get(url, headers=headers))
+        
+        response = DeserializeResponse(self.Session.get(url))
         if response.errors:
             return response
         return response.content.rows
@@ -213,10 +215,8 @@ class SpreadsheetApi:
         if columns and viewId:
             return print("Using both columns and viewId parameters together is not supported.")
         url = self.Environment + self.AppUrl + \
-            f'{plantId}/worksheet/{str(wsType)}/rows/byday/{date.year}/{date.month}/{date.day}'
-        headers = {'Authorization': self.Auth.Token.access_token,
-                   "Accept": "application/x-protobuf"}
-        response = DeserializeResponse(requests.get(url, headers=headers))
+            f'{plantId}/worksheet/{str(wsType)}/rows/byday/{date.year}/{date.month}/{date.day}'        
+        response = DeserializeResponse(self.Session.get(url))
         if response.errors:
             return response
         return response.content.rows.items
@@ -225,10 +225,8 @@ class SpreadsheetApi:
         if columns and viewId:
             return print("Using both columns and viewId parameters together is not supported.")
         url = self.Environment + self.AppUrl + \
-            f'{plantId}/worksheet/{str(wsType)}/rows/bymonth/{date.year}/{date.month}'
-        headers = {'Authorization': self.Auth.Token.access_token,
-                   "Accept": "application/x-protobuf"}
-        response = DeserializeResponse(requests.get(url, headers=headers))
+            f'{plantId}/worksheet/{str(wsType)}/rows/bymonth/{date.year}/{date.month}'        
+        response = DeserializeResponse(self.Session.get(url))
         if response.errors:
             return response
         return response.content.rows.items

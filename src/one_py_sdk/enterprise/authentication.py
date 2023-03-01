@@ -9,13 +9,18 @@ import google
 
 
 class AuthenticationApi:
-    def __init__(self, env):
+    def __init__(self, env, session: requests.Session = None ):
         self.Environment = env
         self.Token = Token()
         self.UserName = ""
         self.Password = ""
         self.User: User = User.User()
         self.IsAuthenticated = False
+        if not session:
+            self.Session = requests.Session()
+            self.Session.headers = {"Content-Type": "application/x-protobuf", "Accept": "application/x-protobuf"}            
+        else:
+            self.Session = session
 
     def GetToken(self, user, password):
         data = {'username': user, 'password': password, 'grant_type': 'password', 'scope': 'FFAccessAPI openid',
@@ -30,6 +35,7 @@ class AuthenticationApi:
         self.IsAuthenticated = True
         self.UserName = user
         self.Password = password
+        self.Session.headers.update({'Authorization': self.Token.access_token})
         return self.Token.access_token
 
     def GetUserInfo(self):
@@ -53,13 +59,14 @@ class AuthenticationApi:
         self.IsAuthenticated = True
         self.UserName = userName
         self.Password = password
+        self.Session.headers.update({'Authorization': self.Token.access_token})
         return True
 
     def Logout(self):
         headers = {'Accept': 'application/json',
                    "Authorization": self.Token.access_token}
         url = self.Environment+"/account/logout"
-        response = requests.post(url, headers=headers)
+        requests.post(url, headers=headers)
         self.Token = Token()
         self.UserName = ""
         self.Password = ""

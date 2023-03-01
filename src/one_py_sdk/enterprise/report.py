@@ -1,4 +1,4 @@
-import requests
+from requests import Session
 import json
 import logging
 from one_py_sdk.enterprise.authentication import AuthenticationApi
@@ -7,18 +7,21 @@ from one_py_sdk.shared.helpers.helpers import IsValidGuid
 
 
 class ReportApi:
-    def __init__(self, env, auth: AuthenticationApi):
+    def __init__(self, env, auth: AuthenticationApi, session: Session= None ):
         self.AppUrl = "/enterprise/report/v1/"
         self.Environment = env
         self.Authentication = auth
+        if not session:
+            self.Session = Session()
+            self.Session.headers = {"Content-Type": "application/x-protobuf", "Accept": "application/x-protobuf"}            
+        else:
+            self.Session = session
 
     def GetReportDefinitions(self, plantId=None):
         url = f'{self.Environment}{self.AppUrl}definitions'
         if plantId and IsValidGuid(plantId):
-            url = url+f"?plantId={plantId}"
-        headers = {'Authorization': self.Authentication.Token.access_token,
-                   "Accept": "application/x-protobuf"}
-        response = DeserializeResponse(requests.get(url, headers=headers))
+            url = url+f"?plantId={plantId}"        
+        response = DeserializeResponse(self.Session.get(url))
         if response.errors:
             return response
         return response.content.ReportDefinitions.items
@@ -50,10 +53,8 @@ class ReportApi:
             return []
         if not IsValidGuid(reportId):
             return logging.error(f"{reportId} is not a valid guid")
-        url = f'{self.Environment}{self.AppUrl}definitions/{reportId}'
-        headers = {'Authorization': self.Authentication.Token.access_token,
-                   "Accept": "application/x-protobuf"}
-        response = DeserializeResponse(requests.get(url, headers=headers))
+        url = f'{self.Environment}{self.AppUrl}definitions/{reportId}'        
+        response = DeserializeResponse(self.Session.get(url))
         if response.errors:
             return response
         elif response.statusCode == 404:

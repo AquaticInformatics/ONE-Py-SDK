@@ -11,14 +11,14 @@ from datetime import datetime, timezone
 
 
 class Exporter:
-    def __init__(self, env, auth):
+    def __init__(self, env, auth, session):
         self.Environment = env
         self.Authentication = auth
-        self.Spreadsheet = SpreadsheetApi(env, auth)
-        self.Library = LibraryApi(env, auth)
-        self.DigitalTwin = DigitalTwinApi(env, auth)
-        self.Configuration = ConfigurationApi(env, auth)
-        self.Historian = HistorianApi(env, auth)
+        self.Spreadsheet = SpreadsheetApi(env, auth, session)
+        self.Library = LibraryApi(env, auth, session)
+        self.DigitalTwin = DigitalTwinApi(env, auth, session)
+        self.Configuration = ConfigurationApi(env, auth, session)
+        self.Historian = HistorianApi(env, auth, session)
     dataFieldNames = ['Worksheet Type', 'Time', 'ColumnName', 'ColumnId',
                       'RowNumber', 'Value', 'StringValue', 'DateEntered', 'ChangedUsing']
     columnFieldNames = ['Worksheet Type', 'ColumnNumber', 'Name', 'ParameterId', 'LocationId', 'LocationName', 'LocationType', 'LocationSubtype', 'Path', 'Latitude', 'Longitude',
