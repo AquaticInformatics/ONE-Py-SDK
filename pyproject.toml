@@ -8,7 +8,8 @@ dependencies = [
     "requests",
     "protobuf==3.20.1", 
     "one_interfaces",
-    "requests_cache"
+    "requests_cache",
+    "pytz"
     ]
 authors = [
   { name="AquaticInformatics", email="daniel.edwards@aquaticinformatics.com" },
