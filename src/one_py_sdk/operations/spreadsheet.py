@@ -39,11 +39,13 @@ class SpreadsheetApi:
 
     def __rowBuilder(self, valueDict: dict[datetime: [DataPoint]], wsType, plantId):
         r = row.Rows()
+        spreadsheetDef =self.GetSpreadsheetDefinition(plantId)
         sortedValueDict = OrderedDict(valueDict.items())
         map = self.MapColumnGuidToIntId(plantId, wsType)
         rowNumbers=[]
         for key in valueDict.keys():
-            rowNumber = GetRowNumber(key, wsType)            
+            rowNumber = GetRowNumber(key, wsType)  
+            localTime =ConvertToLocalTime(key, spreadsheetDef[0].enumTimeZone)            
             for dataPoint in sortedValueDict[key]:
                     cd = celldata.CellData()
                     c = cell.Cell()
@@ -59,8 +61,12 @@ class SpreadsheetApi:
                                 n.userId = dataPoint.auditUserId
                             else:
                                 n.userId = self.Auth.User.id
-                            n.timeStamp.jsonDateTime.value = ToJsonTicksDateTime(
-                                datetime.utcnow()).jsonDateTime.value
+                            if dataPoint.auditTimeStamp !="":
+                                n.timeStamp.jsonDateTime.value = ToJsonTicksDateTime(
+                                ConvertToLocalTime(dataPoint.auditTimeStamp, spreadsheetDef[0].enumTimeZone)).jsonDateTime.value
+                            else:
+                                n.timeStamp.jsonDateTime.value = ToJsonTicksDateTime(
+                                localTime).jsonDateTime.value
                             c.notes.append(n)
                     except:
                         pass
@@ -74,10 +80,10 @@ class SpreadsheetApi:
                         cd.dataSourceBinding.bindingId = self.Auth.User.id
                     if dataPoint.auditTimeStamp != "":
                         s.timeStamp.jsonDateTime.value = ToJsonTicksDateTime(
-                            dataPoint.auditTimeStamp).jsonDateTime.value
+                            ConvertToLocalTime(dataPoint.auditTimeStamp)).jsonDateTime.value
                     else:
                         s.timeStamp.jsonDateTime.value = ToJsonTicksDateTime(
-                            key).jsonDateTime.value
+                            localTime).jsonDateTime.value
                     s.details = "Python SDK import"
                     s.enumDataSource = 5
                     s.enumDomainSource = 2
@@ -101,6 +107,7 @@ class SpreadsheetApi:
                                 item.cellDatas.insert(0, cd)
                                 itemAdded =True
                         if not itemAdded:
+                            c.cellDatas.append(cd)
                             r2.cells.append(c)      
         return r
 
