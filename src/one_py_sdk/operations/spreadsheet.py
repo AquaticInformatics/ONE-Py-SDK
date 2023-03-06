@@ -27,7 +27,7 @@ class SpreadsheetApi:
         
         
 
-    def ImportDictionary(self, plantId, valueDict, wsType):
+    def ImportDictionary(self, plantId, valueDict, wsType):       
         rows = self.__rowBuilder(valueDict, wsType, plantId)
         return self.SaveRows(plantId, wsType, rows)
 
@@ -80,7 +80,7 @@ class SpreadsheetApi:
                         cd.dataSourceBinding.bindingId = self.Auth.User.id
                     if dataPoint.auditTimeStamp != "":
                         s.timeStamp.jsonDateTime.value = ToJsonTicksDateTime(
-                            ConvertToLocalTime(dataPoint.auditTimeStamp)).jsonDateTime.value
+                            ConvertToLocalTime(dataPoint.auditTimeStamp, spreadsheetDef[0].enumTimeZone)).jsonDateTime.value
                     else:
                         s.timeStamp.jsonDateTime.value = ToJsonTicksDateTime(
                             localTime).jsonDateTime.value
@@ -151,9 +151,10 @@ class SpreadsheetApi:
         return response.content.worksheetDefinitions.items
 
     def GetSpreadsheetDefinition(self, plantId):
-        url = f'{self.Environment}{self.AppUrl}{plantId}/definition'
-        
+        url = f'{self.Environment}{self.AppUrl}{plantId}/definition'        
         response = DeserializeResponse(self.Session.get(url))
+        if response.errors:
+            return response
         return response.content.spreadsheetDefinitions.items
 
     def GetColumnByDay(self, plantId, wsType, columnId, date: datetime):
