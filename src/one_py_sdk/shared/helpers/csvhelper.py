@@ -111,7 +111,7 @@ class Exporter:
                                                         'ChangedUsing': self.EnumDataSourceToStringValue(cell.cellDatas[0].auditEvents[-1].enumDataSource)})
                         else: 
                             logging.error(f"Audit info not found for Plant: {plantId},'Worksheet Type': {wsVal}, 'ColumnName':{numberMapping[cell.columnNumber][0]},'Time': {rowDict[vals.rowNumber]}, 'Value': {cell.cellDatas[0].value.value} ")
-                    except IndexError:
+                    except (IndexError, KeyError):
                         pass
                     except TypeError:
                         logging.exception("message")
@@ -138,7 +138,7 @@ class Exporter:
                                                   'StringValue': cell.cellDatas[0].stringValue.value,
                                                   'DateEntered': cell.cellDatas[0].auditEvents[-1].timeStamp.jsonDateTime.value,
                                                   'ChangedUsing': self.EnumDataSourceToStringValue(cell.cellDatas[0].auditEvents[-1].enumDataSource)})
-                    except(IndexError):
+                    except(IndexError, KeyError):
                         pass
 
     def ExportWorksheetByType(self, filename, plantId, startDate, endDate, wsType=4, updatedAfter=None):
