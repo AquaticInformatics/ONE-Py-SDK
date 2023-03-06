@@ -11,14 +11,14 @@ from datetime import datetime, timezone
 
 
 class Exporter:
-    def __init__(self, env, auth):
+    def __init__(self, env, auth, session):
         self.Environment = env
         self.Authentication = auth
-        self.Spreadsheet = SpreadsheetApi(env, auth)
-        self.Library = LibraryApi(env, auth)
-        self.DigitalTwin = DigitalTwinApi(env, auth)
-        self.Configuration = ConfigurationApi(env, auth)
-        self.Historian = HistorianApi(env, auth)
+        self.Spreadsheet = SpreadsheetApi(env, auth, session)
+        self.Library = LibraryApi(env, auth, session)
+        self.DigitalTwin = DigitalTwinApi(env, auth, session)
+        self.Configuration = ConfigurationApi(env, auth, session)
+        self.Historian = HistorianApi(env, auth, session)
     dataFieldNames = ['Worksheet Type', 'Time', 'ColumnName', 'ColumnId',
                       'RowNumber', 'Value', 'StringValue', 'DateEntered', 'ChangedUsing']
     columnFieldNames = ['Worksheet Type', 'ColumnNumber', 'Name', 'ParameterId', 'LocationId', 'LocationName', 'LocationType', 'LocationSubtype', 'Path', 'Latitude', 'Longitude',
@@ -111,7 +111,7 @@ class Exporter:
                                                         'ChangedUsing': self.EnumDataSourceToStringValue(cell.cellDatas[0].auditEvents[-1].enumDataSource)})
                         else: 
                             logging.error(f"Audit info not found for Plant: {plantId},'Worksheet Type': {wsVal}, 'ColumnName':{numberMapping[cell.columnNumber][0]},'Time': {rowDict[vals.rowNumber]}, 'Value': {cell.cellDatas[0].value.value} ")
-                    except IndexError:
+                    except (IndexError, KeyError):
                         pass
                     except TypeError:
                         logging.exception("message")
@@ -138,7 +138,7 @@ class Exporter:
                                                   'StringValue': cell.cellDatas[0].stringValue.value,
                                                   'DateEntered': cell.cellDatas[0].auditEvents[-1].timeStamp.jsonDateTime.value,
                                                   'ChangedUsing': self.EnumDataSourceToStringValue(cell.cellDatas[0].auditEvents[-1].enumDataSource)})
-                    except(IndexError):
+                    except(IndexError, KeyError):
                         pass
 
     def ExportWorksheetByType(self, filename, plantId, startDate, endDate, wsType=4, updatedAfter=None):

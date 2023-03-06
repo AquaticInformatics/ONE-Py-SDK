@@ -3,12 +3,13 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 [project]
 name = "one_py_sdk"
-version = "1.4.0"
+version = "1.5.0"
 dependencies = [
     "requests",
     "protobuf==3.20.1", 
     "one_interfaces",
-    "requests_cache"
+    "requests_cache",
+    "pytz"
     ]
 authors = [
   { name="AquaticInformatics", email="daniel.edwards@aquaticinformatics.com" },
