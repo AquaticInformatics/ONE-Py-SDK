@@ -1,9 +1,9 @@
 from datetime import datetime, timezone, timedelta
 import pytz as zone
 from one_interfaces import jsonTicksDateTime_pb2 as jsonTicksTime
-from one_interfaces import enum_timezone_pb2 
+from one_interfaces import enum_timezone_pb2
 
-timeZoneDictionary ={    
+timeZoneDictionary = {
     54: zone.timezone('America/Adak'),
     55: zone.timezone('America/Anchorage'),
     93: zone.timezone('America/Chicago'),
@@ -34,9 +34,17 @@ def GetRowNumber(date: datetime, wsType):
     windowSizeMinutes = windowSize.total_seconds()/60
     return int(diffTimeMinutes / windowSizeMinutes) + 1
 
-def ConvertToLocalTime(date:datetime, localTz: enum_timezone_pb2):
-    tz=timeZoneDictionary[localTz]
-    date =date.replace(tzinfo=tz)
+
+def AssumePlantTimeConvertToUtc(date: datetime, localTz: enum_timezone_pb2):
+    tz = timeZoneDictionary[localTz]
+    date = tz.localize(date.replace(tzinfo=None))
+    utc = zone.timezone('utc')
+    date = date.astimezone(utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+    return date
+
+def ConvertToUtc(date: datetime):   
+    utc = zone.timezone('utc')
+    date = date.astimezone(utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
     return date
 
 def GetDateFromRowNumber(rowNumber, wsType):
