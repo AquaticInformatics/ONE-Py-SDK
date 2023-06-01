@@ -6,3 +6,4 @@ one_interfaces*
 dist/*
 src/one_py_sdk.egg-info/*
 *.csv
+38/*
