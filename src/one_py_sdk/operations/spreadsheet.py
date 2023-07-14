@@ -36,7 +36,7 @@ class SpreadsheetApi:
             url, data=rows.SerializeToString()))
         return response
 
-    def __rowBuilder(self, valueDict: dict[datetime: [DataPoint]], wsType, plantId):
+    def __rowBuilder(self, valueDict, wsType, plantId):
         r = row.Rows()
         spreadsheetDef = self.GetSpreadsheetDefinition(plantId)
         sortedValueDict = OrderedDict(valueDict.items())
