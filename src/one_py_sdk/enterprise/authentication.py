@@ -9,7 +9,7 @@ import google
 
 
 class AuthenticationApi:
-    def __init__(self, env, session: requests.Session = None ):
+    def __init__(self, env, session: requests.Session = None):
         self.Environment = env
         self.Token = Token()
         self.UserName = ""
@@ -18,7 +18,8 @@ class AuthenticationApi:
         self.IsAuthenticated = False
         if not session:
             self.Session = requests.Session()
-            self.Session.headers = {"Content-Type": "application/x-protobuf", "Accept": "application/x-protobuf"}            
+            self.Session.headers = {
+                "Content-Type": "application/x-protobuf", "Accept": "application/x-protobuf"}
         else:
             self.Session = session
 
@@ -94,6 +95,11 @@ class AuthenticationApi:
         token.expires_in = token.created + \
             timedelta(seconds=responseJson['expires_in'])
         self.Token = token
+
+    def CheckTokenAndRenew(self):
+        if self.Token.expires_in:
+            if datetime.now() > self.Token.expires_in:
+                self.GetToken(self.UserName, self.Password)
 
 
 class Token:

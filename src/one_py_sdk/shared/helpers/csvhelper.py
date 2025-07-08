@@ -552,3 +552,5 @@ class Exporter:
         dateEntered =datetime.strptime(dateEntered[:15], '%Y-%m-%dT%H:%M')
         dateEntered = dateEntered.replace(tzinfo=timezone.utc)        
         return dateEntered        
+
+   
