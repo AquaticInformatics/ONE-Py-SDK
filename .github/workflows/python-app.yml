@@ -4,8 +4,9 @@
 name: Python test
 
 on:  
+  workflow_dispatch: 
   schedule:
-      - cron: '53 21 * * 4'
+      - cron: '00 22 * * 4'
   
   
 permissions:
