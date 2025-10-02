@@ -6,7 +6,7 @@ name: Python test
 on:
 
   schedule:
-      cron: ["15  * * 4"]
+      -cron: "15 23 * * 4"
   push:
     branches: [ "main" ]
   pull_request:
