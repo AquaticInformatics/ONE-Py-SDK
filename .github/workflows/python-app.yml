@@ -3,11 +3,7 @@
 
 name: Python test
 
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+on:  
   schedule:
       - cron: '32 21 * * 4'
   
