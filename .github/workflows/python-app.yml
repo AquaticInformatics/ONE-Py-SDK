@@ -5,7 +5,7 @@ name: Python test
 
 on:  
   schedule:
-      - cron: '32 21 * * 4'
+      - cron: '53 21 * * 4'
   
   
 permissions:
