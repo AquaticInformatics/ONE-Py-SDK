@@ -22,9 +22,37 @@ class SpreadsheetApi:
         if not session:
             self.Session = Session()
             self.Session.headers = {
-                "Content-Type": "application/x-protobuf", "Accept": "application/x-protobuf"}
+                "Content-Type": "application/x-protobuf", "Accept": "application/x-protobuf", "Referrer": "ONE.Py.SDK"}
         else:
             self.Session = session
+
+    def DeletePlant(self, plantId):
+        url = f'{self.Environment}{self.AppUrl}{plantId}/plant/delete'
+        response = DeserializeResponse(self.Session.delete(url))
+        return response
+
+    def ExportPlant(self, plantId):
+        url = f'{self.Environment}{self.AppUrl}{plantId}/plant/export'
+        response = DeserializeResponse(self.Session.get(url))
+        return response
+
+    def ImportPlant(self, plantId, tenantId, operationExport):
+        url = f'{self.Environment}{self.AppUrl}{plantId}/plant/import/{tenantId}'
+        response = DeserializeResponse(self.Session.post(
+            url, data=operationExport.SerializeToString()))
+        return response
+
+    def FlushPlant(self, plantId):
+        url = f'{self.Environment}{self.AppUrl}{plantId}/plant/flush'
+        r = self.Session.post(url)
+        print(r)
+        response = DeserializeResponse(r)
+        return response
+
+    def BackupPlant(self, plantId):
+        url = f'{self.Environment}{self.AppUrl}{plantId}/plant/backup'
+        response = DeserializeResponse(self.Session.post(url))
+        return response
 
     def ImportDictionary(self, plantId, valueDict, wsType):
         rows = self.__rowBuilder(valueDict, wsType, plantId)
@@ -44,7 +72,8 @@ class SpreadsheetApi:
         rowNumbers = []
         for key in valueDict.keys():
             rowNumber = GetRowNumber(key, wsType)
-            utcTime = AssumePlantTimeConvertToUtc(key, spreadsheetDef[0].enumTimeZone)            
+            utcTime = AssumePlantTimeConvertToUtc(
+                key, spreadsheetDef[0].enumTimeZone)
             for dataPoint in sortedValueDict[key]:
                 cd = celldata.CellData()
                 c = cell.Cell()
@@ -249,3 +278,17 @@ class SpreadsheetApi:
             startRow = newEndRow+1
         rows.MergeFrom(self.__getRows(plantId, wsType, startRow, endRow))
         return rows.items
+
+    def UpdateColumn(self, plantId, wsType, wsDef):
+        url = self.Environment + self.AppUrl + plantId + \
+            f'/worksheet/{str(wsType)}/definition/columns'
+        response = DeserializeResponse(
+            self.Session.put(url, data=wsDef.SerializeToString()))
+        return response
+
+    def PurgeRows(self, plantId, wsType, startDate, endDate):
+        startRow = GetRowNumber(startDate, wsType)
+        endRow = GetRowNumber(endDate, wsType)
+        url = f"{self.Environment}{self.AppUrl}{plantId}/worksheet/{wsType}/rows?startRow={startRow}&endRow={endRow}"
+        response = DeserializeResponse(self.Session.delete(url))
+        return response
