@@ -22,7 +22,7 @@ class SpreadsheetApi:
         if not session:
             self.Session = Session()
             self.Session.headers = {
-                "Content-Type": "application/x-protobuf", "Accept": "application/x-protobuf"}
+                "Content-Type": "application/x-protobuf", "Accept": "application/x-protobuf", "Referrer": "ONE.Py.SDK"}
         else:
             self.Session = session
 
@@ -285,7 +285,7 @@ class SpreadsheetApi:
         response = DeserializeResponse(
             self.Session.put(url, data=wsDef.SerializeToString()))
         return response
-    
+
     def PurgeRows(self, plantId, wsType, startDate, endDate):
         startRow = GetRowNumber(startDate, wsType)
         endRow = GetRowNumber(endDate, wsType)

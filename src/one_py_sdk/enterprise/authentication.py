@@ -19,7 +19,7 @@ class AuthenticationApi:
         if not session:
             self.Session = requests.Session()
             self.Session.headers = {
-                "Content-Type": "application/x-protobuf", "Accept": "application/x-protobuf"}
+                "Content-Type": "application/x-protobuf", "Accept": "application/x-protobuf", "Referrer": "ONE.Py.SDK"}
         else:
             self.Session = session
 
@@ -27,7 +27,7 @@ class AuthenticationApi:
         data = {'username': user, 'password': password, 'grant_type': 'password', 'scope': 'FFAccessAPI openid',
                 'client_id': 'VSTestClient', 'client_secret': '0CCBB786-9412-4088-BC16-78D3A10158B7'}
         headers = {'Accept': 'application/json',
-                   'Content-Type': 'application/x-www-form-urlencoded'}
+                   'Content-Type': 'application/x-www-form-urlencoded', 'Referrer': self.Session.headers.get('Referrer')}
         url = self.Environment+"/connect/token"
         response = requests.post(url, headers=headers, data=data)
         if (response.status_code != 200):

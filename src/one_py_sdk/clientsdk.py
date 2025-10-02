@@ -26,7 +26,8 @@ class ClientSdk:
     def Initialize(self, cacheTimeout: int):
         self.Session = Session()
         self.Session.headers = {
-            "Content-Type": "application/x-protobuf", "Accept": "application/x-protobuf"}
+            "Content-Type": "application/x-protobuf", "Accept": "application/x-protobuf",
+            "Referrer": "ONE.Py.SDK"}
         self.Authentication = AuthenticationApi(self.Environment, self.Session)
         self.DigitalTwin = DigitalTwinApi(
             self.Environment, self.Authentication, self.Session)
