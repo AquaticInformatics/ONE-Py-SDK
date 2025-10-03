@@ -6,7 +6,7 @@ name: Python test
 on:  
   workflow_dispatch: 
   schedule:
-      - cron: '00 22 * * 4'
+      - cron: '35 13 * * 5'
   
   
 permissions:
