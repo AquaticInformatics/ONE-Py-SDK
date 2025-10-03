@@ -6,7 +6,7 @@ name: Python test
 on:  
   workflow_dispatch: 
   schedule:
-      - cron: '35 13 * * 5'
+      - cron: '41 13 * * 5'
   
   
 permissions:
@@ -37,3 +37,4 @@ jobs:
     - name: Test
       run: |
         python /src/one_py_sdk/tests/sdkTests.py
+
