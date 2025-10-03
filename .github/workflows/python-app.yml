@@ -34,4 +34,7 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test
       run: |
+        ls
+        cd one-py-sdk
+        ls
         python ~/one-py-sdk/one-py-skd/src/one_py_sdk/tests/sdkTests.py
