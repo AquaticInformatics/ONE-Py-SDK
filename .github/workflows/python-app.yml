@@ -37,4 +37,4 @@ jobs:
         ls
         cd one-py-sdk
         ls
-        python ~/one-py-sdk/one-py-skd/src/one_py_sdk/tests/sdkTests.py
+        python ~/src/one_py_sdk/tests/sdkTests.py
