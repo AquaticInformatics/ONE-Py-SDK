@@ -9,92 +9,104 @@ client = ClientSdk()
 startDate = datetime.now()-timedelta(days=7)
 endDate = datetime.now()
 
+
 class TestAuthenticationApi(unittest.TestCase):
     def test_getToken(self):
         tokenResponse = client.Authentication.GetToken(userName, password)
         self.assertIsNotNone(tokenResponse)
         self.assertTrue("Bearer" in tokenResponse)
+
+
 class TestSpreadsheetAPI(unittest.TestCase):
     def test_GetWorksheetColumnIds(self):
         idResponse = client.Spreadsheet.GetWorksheetColumnIds(readPlantId, 4)
         self.assertIsNotNone(idResponse)
-        self.assertGreaterEqual(len(idResponse), 10)        
-        
-    def test_GetRowsForTimeRange(self):        
+        self.assertGreaterEqual(len(idResponse), 10)
+
+    def test_GetRowsForTimeRange(self):
         rowsForTimeRangeResponse = client.Spreadsheet.GetRowsForTimeRange(
             readPlantId, 4, startDate, endDate)
         self.assertIsNotNone(rowsForTimeRangeResponse)
-        for k in rowsForTimeRangeResponse:            
-            self.assertEqual(rowsForTimeRangeResponse[k].cells[0].cellDatas[0].value.value, 1.0) 
-                   
+        for k in rowsForTimeRangeResponse:
+            self.assertEqual(
+                rowsForTimeRangeResponse[k].cells[0].cellDatas[0].value.value, 1.0)
+
     def test_GetWorksheetDefinition(self):
         wsDefResponse = client.Spreadsheet.GetWorksheetDefinition(
             readPlantId, 4)
-        self.assertIsNotNone(wsDefResponse)       
+        self.assertIsNotNone(wsDefResponse)
 
-    def test_ImportDictionary(self):        
+    def test_ImportDictionary(self):
         dates1d = [startDate + timedelta(days=1*i) for i in range(7)]
         colIds = client.Spreadsheet.GetWorksheetColumnIds(plantId, 4)
-        data1d = [DataPoint("1", colId, f"noted {colId}", client.Authentication.User.id) for colId in colIds]
+        data1d = [DataPoint(
+            "1", colId, f"noted {colId}", client.Authentication.User.id) for colId in colIds]
         dailyDict = {}
         for date in dates1d:
             dailyDict[date] = data1d
         importResponse = client.Spreadsheet.ImportDictionary(
             writePlantId, dailyDict, 4)
         self.assertIsNotNone(importResponse)
+
+
 class TestExporter(unittest.TestCase):
     def test_ExportLimitColumns(self):
         allLimits = "LimitColumnInfoAllLimitsTest.csv"
         # Only exports columns with regulatory limits unless the final parameter is set to true (it defaults to false) then it will export all columns with limits
         client.Exporter.ExportLimitColumns(allLimits, plantId, 4, "", True)
-        print(f"Completed export of column information for all limit columns for daily worksheet for plant {plantId}")        
+        print(
+            f"Completed export of column information for all limit columns for daily worksheet for plant {plantId}")
         with open(allLimits) as file:
             csvreader = csv.reader(file)
             header = next(csvreader)  # Read the header row
             print(header)
-            count =0
+            count = 0
             for row in csvreader:
-                count+=1
+                count += 1
         self.assertGreaterEqual(count, 2)
-        
-    def test_ExportRegulatoryLimits(self):        
-        regLimits = "LimitColumnInfoRegulatoryLimitsTest.csv"        
+
+    def test_ExportRegulatoryLimits(self):
+        regLimits = "LimitColumnInfoRegulatoryLimitsTest.csv"
         # Only exports columns with regulatory limits unless the final parameter is set to true (it defaults to false) then it will export all columns with limits
         client.Exporter.ExportLimitColumns(regLimits, plantId, 4, "")
-        print(f"Completed export of column information for regulatory limit columns for daily worksheet for plant {plantId}")
+        print(
+            f"Completed export of column information for regulatory limit columns for daily worksheet for plant {plantId}")
         with open(regLimits) as file:
             csvreader = csv.reader(file)
             header = next(csvreader)  # Read the header row
             print(header)
-            count =0
+            count = 0
             for row in csvreader:
-                count+=1
+                count += 1
         self.assertGreaterEqual(count, 1)
+
     def test_ExportWorksheet(self):
         allWs = "AllWsExport.csv"
         client.Exporter.ExportWorksheet(allWs, plantId, startDate, endDate)
         with open(allWs, 'r') as file:
             csvreader = csv.reader(file)
             header = next(csvreader)  # Read the header row
-            count =0
+            count = 0
             for row in csvreader:
-                count+=1
+                count += 1
         self.assertGreaterEqual(count, 70)
 
     def test_ExportColumnDetails(self):
         columnInfoDaily = "ColumnInfoDaily.csv"
-        client.Exporter.ExportColumnDetails(columnInfoDaily, plantId, 4) 
-        print(f"Completed export of column information for hourly worksheets for plant {plantId}")
-        
-
+        client.Exporter.ExportColumnDetails(columnInfoDaily, plantId, 4)
+        print(
+            f"Completed export of column information for hourly worksheets for plant {plantId}")
 
     def test_ExportLimits(self):
-        client.Exporter.ExportLimits("Limits.csv", plantId) #Exports limit columns for all worksheet types
-
-        client.Exporter.ExportLimits("LimitsForFourHour.csv", plantId, 4)
+        # Exports limit columns for all worksheet types
+        client.Exporter.ExportLimits("Limits.csv", plantId)
+        
+        client.Exporter.ExportLimits("LimitsDaily.csv", plantId, 4)
 
     def test_PathFinder(self):
         pass
+
+
 class TestCoreApi(unittest.TestCase):
     def test_GetUser(self):
         user = client.Core.GetUser(client.Authentication.User.id)
@@ -119,7 +131,8 @@ class TestTwinApi(unittest.TestCase):
         self.assertIsNotNone(twinSubtypesResponse)
 
     def test_GetDescendantsByType(self):
-        twinDescendantsByTypeResponse = client.DigitalTwin.GetDescendantsByType(plantId, )
+        twinDescendantsByTypeResponse = client.DigitalTwin.GetDescendantsByType(
+            plantId, )
 
         pass
 
@@ -131,12 +144,26 @@ class TestTwinApi(unittest.TestCase):
         self.assertIsNotNone(allDescendants)
         pass
 
+
 def suite():
     test_suite = unittest.TestSuite()
     test_suite.addTest(TestAuthenticationApi('test_getToken'))
-    test_suite.addTests([TestSpreadsheetAPI('test_ImportDictionary'),TestSpreadsheetAPI('test_')])
-    
+    test_suite.addTests([TestSpreadsheetAPI('test_ImportDictionary'), TestSpreadsheetAPI('test_GetRowsForTimeRange'),
+                         TestSpreadsheetAPI('test_GetWorksheetDefinition'), TestSpreadsheetAPI('test_GetWorksheetColumnIds')])
+    test_suite.addTests([TestExporter("test_ExportLimitColumns"), TestExporter("test_ExportRegulatoryLimits"),
+                         TestExporter("test_ExportWorksheet"), TestExporter(
+                             "test_ExportColumnDetails"),
+                         TestExporter("test_ExportLimits"), TestExporter("test_PathFinder")])
+    test_suite.addTest(TestCoreApi("test_GetUser"))
+    test_suite.addTests([TestTwinApi("test_GetTwinData"), TestTwinApi("test_Get"),
+                         TestTwinApi("test_GetDigitalTwinTypes"), TestTwinApi(
+                             "test_GetDigitalTwinSubtypes"),
+                         TestTwinApi("test_GetDescendantsByType"), TestTwinApi(
+                             "test_GetDescendantsBySubType"),
+                         TestTwinApi("test_GetDescendants")])
+
     return test_suite
+
 
 if __name__ == '__main__':
     runner = unittest.TextTestRunner()
