@@ -8,6 +8,8 @@ from testConstants import *
 client = ClientSdk()
 startDate = datetime.now()-timedelta(days=7)
 endDate = datetime.now()
+twinTypeId = ""
+twinSubTypeId = ""
 
 
 class TestAuthenticationApi(unittest.TestCase):
@@ -99,11 +101,28 @@ class TestExporter(unittest.TestCase):
 
     def test_ExportLimits(self):
         # Exports limit columns for all worksheet types
-        client.Exporter.ExportLimits("Limits.csv", plantId)
-        
-        client.Exporter.ExportLimits("LimitsDaily.csv", plantId, 4)
+        limits = "Limits.csv"
+        client.Exporter.ExportLimits(limits, plantId)
+        with open(limits, 'r') as file:
+            csvreader = csv.reader(file)
+            header = next(csvreader)  # Read the header row
+            count = 0
+            for row in csvreader:
+                count += 1
+        self.assertGreaterEqual(count, 3)
+        dailyLimits = "LimitsDaily.csv"
+        client.Exporter.ExportLimits(dailyLimits, plantId, 4)
+        count = 0
+        with open(dailyLimits, 'r') as file:
+            csvreader = csv.reader(file)
+            header = next(csvreader)  # Read the header row
+            count = 0
+            for row in csvreader:
+                count += 1
+        self.assertGreaterEqual(count, 3)
 
     def test_PathFinder(self):
+        client.Exporter.PathFinder(plantId, {})
         pass
 
 
@@ -115,34 +134,36 @@ class TestCoreApi(unittest.TestCase):
 
 class TestTwinApi(unittest.TestCase):
     def test_GetTwinData(self):
-        twinDataResponse = client.DigitalTwin.GetTwinData(tenantId)
+        twinDataResponse = client.DigitalTwin.GetTwinData(plantId)
         self.assertIsNotNone(twinDataResponse)
 
     def test_Get(self):
-        tenantTwin = client.DigitalTwin.Get(tenantId)
-        self.assertIsNotNone(tenantTwin)
+        plantTwin = client.DigitalTwin.Get(plantId)
+        self.assertIsNotNone(plantTwin)
 
     def test_GetDigitalTwinTypes(self):
         twinTypes = client.DigitalTwin.GetDigitalTwinTypes()
         self.assertIsNotNone(twinTypes)
+        twinTypeId = twinTypes[0].id
 
     def test_GetDigitalTwinSubtypes(self):
         twinSubtypesResponse = client.DigitalTwin.GetDigitalTwinSubtypes()
         self.assertIsNotNone(twinSubtypesResponse)
+        twinSubTypeId = twinSubtypesResponse[0].id
 
     def test_GetDescendantsByType(self):
         twinDescendantsByTypeResponse = client.DigitalTwin.GetDescendantsByType(
-            plantId, )
-
-        pass
+            plantId, twinTypeId)
+        self.assertIsNotNone(twinDescendantsByTypeResponse)
 
     def test_GetDescendantsBySubType(self):
-        pass
+        twinDescendantsBySubtypeResponse = client.DigitalTwin.GetDescendantsBySubType(
+            plantId, twinSubTypeId)
+        self.assertIsNotNone(twinDescendantsBySubtypeResponse)
 
     def test_GetDescendants(self):
-        allDescendants = client.DigitalTwin.GetDescendants(tenantId)
+        allDescendants = client.DigitalTwin.GetDescendants(plantId)
         self.assertIsNotNone(allDescendants)
-        pass
 
 
 def suite():
@@ -168,8 +189,3 @@ def suite():
 if __name__ == '__main__':
     runner = unittest.TextTestRunner()
     runner.run(suite())
-    # client.Authentication.GetToken(userName, password)
-    # client.Authentication.LoginResourceOwner(userName, password)
-    # client.Authentication.GetUserInfo()
-    # tenantId = client.Authentication.User.tenantId
-    # unittest.main()
