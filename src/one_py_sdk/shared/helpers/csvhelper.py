@@ -453,19 +453,17 @@ class Exporter:
             lat = twin.geography.point2d.y
             long = twin.geography.point2d.x
             twinDict[twin.twinReferenceId.value] = [twin.parentTwinReferenceId.value,
-                                                    twin.name.value, None, None, twin.twinTypeId, twin.twinSubTypeId.value, lat, long, twin.twinNodePath, twin.parentNodePath]
+                                                    twin.name.value, None, None, twin.twinTypeId, twin.twinSubTypeId.value, lat, long]
 
         for key in columnDict.keys():
             twinId = columnDict[key][1]
             path = []
             twinChain = []
-            twinNode = twinDict[twinId][8]
             pathString = ""
-            plantNode = twinDict[plantId][8]
-            while (twinNode != plantNode):
+            while (twinId != plantId):
                 path.append(twinDict[twinId][1])
                 twinChain.append(twinId)
-                twinNode = twinDict[twinId][9]
+                twinId = twinDict[twinId][0]
             path.append(twinDict[twinId][1])
             twinChain.append(plantId)
             for twinRef in twinChain:
@@ -554,5 +552,3 @@ class Exporter:
         dateEntered =datetime.strptime(dateEntered[:15], '%Y-%m-%dT%H:%M')
         dateEntered = dateEntered.replace(tzinfo=timezone.utc)        
         return dateEntered        
-
-   
