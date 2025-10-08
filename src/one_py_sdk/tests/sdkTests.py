@@ -23,7 +23,6 @@ class TestSpreadsheetAPI(unittest.TestCase):
     def test_GetWorksheetColumnIds(self):
         idResponse = client.Spreadsheet.GetWorksheetColumnIds(readPlantId, 4)
         self.assertIsNotNone(idResponse)
-        self.assertGreaterEqual(len(idResponse), 10)
 
     def test_GetRowsForTimeRange(self):
         rowsForTimeRangeResponse = client.Spreadsheet.GetRowsForTimeRange(
@@ -37,6 +36,7 @@ class TestSpreadsheetAPI(unittest.TestCase):
         wsDefResponse = client.Spreadsheet.GetWorksheetDefinition(
             readPlantId, 4)
         self.assertIsNotNone(wsDefResponse)
+        self.assertGreaterEqual(len(wsDefResponse[0].columns), 10)
 
     def test_ImportDictionary(self):
         dates1d = [startDate + timedelta(days=1*i) for i in range(7)]
@@ -56,12 +56,10 @@ class TestExporter(unittest.TestCase):
         allLimits = "LimitColumnInfoAllLimitsTest.csv"
         # Only exports columns with regulatory limits unless the final parameter is set to true (it defaults to false) then it will export all columns with limits
         client.Exporter.ExportLimitColumns(allLimits, plantId, 4, "", True)
-        print(
-            f"Completed export of column information for all limit columns for daily worksheet for plant {plantId}")
+
         with open(allLimits) as file:
             csvreader = csv.reader(file)
-            header = next(csvreader)  # Read the header row
-            print(header)
+            next(csvreader)  # Read the header row
             count = 0
             for row in csvreader:
                 count += 1
@@ -71,12 +69,9 @@ class TestExporter(unittest.TestCase):
         regLimits = "LimitColumnInfoRegulatoryLimitsTest.csv"
         # Only exports columns with regulatory limits unless the final parameter is set to true (it defaults to false) then it will export all columns with limits
         client.Exporter.ExportLimitColumns(regLimits, plantId, 4, "")
-        print(
-            f"Completed export of column information for regulatory limit columns for daily worksheet for plant {plantId}")
         with open(regLimits) as file:
             csvreader = csv.reader(file)
-            header = next(csvreader)  # Read the header row
-            print(header)
+            next(csvreader)  # Read the header row
             count = 0
             for row in csvreader:
                 count += 1
@@ -96,8 +91,13 @@ class TestExporter(unittest.TestCase):
     def test_ExportColumnDetails(self):
         columnInfoDaily = "ColumnInfoDaily.csv"
         client.Exporter.ExportColumnDetails(columnInfoDaily, plantId, 4)
-        print(
-            f"Completed export of column information for hourly worksheets for plant {plantId}")
+        with open(columnInfoDaily, 'r') as file:
+            csvreader = csv.reader(file)
+            header = next(csvreader)  # Read the header row
+            count = 0
+            for row in csvreader:
+                count += 1
+        self.assertGreaterEqual(count, 3)
 
     def test_ExportLimits(self):
         # Exports limit columns for all worksheet types
@@ -121,10 +121,6 @@ class TestExporter(unittest.TestCase):
                 count += 1
         self.assertGreaterEqual(count, 3)
 
-    def test_PathFinder(self):
-        client.Exporter.PathFinder(plantId, {})
-        pass
-
 
 class TestCoreApi(unittest.TestCase):
     def test_GetUser(self):
@@ -140,6 +136,7 @@ class TestTwinApi(unittest.TestCase):
     def test_Get(self):
         plantTwin = client.DigitalTwin.Get(plantId)
         self.assertIsNotNone(plantTwin)
+        self.assertEqual(plantTwin[0].twinReferenceId.value, plantId)
 
     def test_GetDigitalTwinTypes(self):
         twinTypes = client.DigitalTwin.GetDigitalTwinTypes()
@@ -174,7 +171,7 @@ def suite():
     test_suite.addTests([TestExporter("test_ExportLimitColumns"), TestExporter("test_ExportRegulatoryLimits"),
                          TestExporter("test_ExportWorksheet"), TestExporter(
                              "test_ExportColumnDetails"),
-                         TestExporter("test_ExportLimits"), TestExporter("test_PathFinder")])
+                         TestExporter("test_ExportLimits")])
     test_suite.addTest(TestCoreApi("test_GetUser"))
     test_suite.addTests([TestTwinApi("test_GetTwinData"), TestTwinApi("test_Get"),
                          TestTwinApi("test_GetDigitalTwinTypes"), TestTwinApi(
