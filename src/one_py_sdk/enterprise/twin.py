@@ -24,22 +24,6 @@ class DigitalTwinApi:
             return response
         return response.content.DigitalTwins.items
 
-    def DeleteTwin(self, twinId):
-        url = f"{self.Environment}{self.AppUrl}DigitalTwin/{twinId}"
-        response = DeserializeResponse(self.Session.delete(url))
-        if response.errors:
-            return response
-        return response
-
-    def DeleteTwinTree(self, twinRefId):
-        url = f"{self.Environment}{self.AppUrl}DigitalTwin/{twinRefId}/tree"
-        r =self.Session.delete(url)
-        try:
-            response = DeserializeResponse(r)            
-            return response
-        except:
-            return r
-
     def GetTwinMeasurementsByRefId(self, twinRefId):
         url = self.Environment+self.AppUrl+"DigitalTwin/Ref/"+twinRefId
         response = DeserializeResponse(self.Session.get(url))
@@ -148,12 +132,3 @@ class DigitalTwinApi:
         while (len(twinPath) > 0):
             twinPathString = twinPathString+str(twinPath.pop())+"/"
         return twinPathString
-    def UpdateTwinData(self, twinRefId, patchDoc):
-        requestId = uuid.uuid4()
-        url = self.Environment+self.AppUrl+"DigitalTwin/twinRefId/" + \
-            twinRefId+"/UpdateTwinData?requestId="+str(requestId)
-        print(url)
-        response = DeserializeResponse(self.Session.patch(url, data=patchDoc))        
-        if response.errors:
-            return response
-        return response.content.DigitalTwins.items

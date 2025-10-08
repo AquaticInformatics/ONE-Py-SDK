@@ -15,13 +15,6 @@ class CoreApi:
             self.Session.headers = {"Content-Type": "application/x-protobuf", "Accept": "application/x-protobuf"}            
         else:
             self.Session = session
-    
-    def DeleteTenant(self, tenantId):
-        url = f"{self.Environment}{self.AppUrl}/Tenant/{tenantId}"
-        response = DeserializeResponse(self.Session.delete(url))
-        if response.errors:
-            return response
-        return response.content
 
     def GetUser(self, userId, expand=None):
         user = User.User()

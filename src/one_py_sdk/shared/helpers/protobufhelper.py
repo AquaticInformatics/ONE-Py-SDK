@@ -26,9 +26,8 @@ def DeserializeResponse(response):
             error = apiError.ApiError()
             error.statusCode =403
             error.detail="Not authorized for this resource"  
-            pbResponse.errors.append(error)
+            pbResponse.errors.add(error)
             return pbResponse
-        
         pbResponse.ParseFromString(response.content)
         return pbResponse
     except Exception as Argument:

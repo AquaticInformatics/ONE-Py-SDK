@@ -5,7 +5,6 @@ from one_py_sdk.enterprise.authentication import AuthenticationApi
 from one_py_sdk.shared.helpers.protobufhelper import DeserializeResponse
 
 
-
 class HistorianApi:
     def __init__(self, env, auth: AuthenticationApi, session: requests.Session=None):
         self.Environment = env
