@@ -2,7 +2,7 @@ name: Scheduled test
 
 on:   
   schedule:
-    - cron: "55 19 * * 4"
+    - cron: "55 20 * * 4"
 
 permissions:
   contents: read
@@ -10,4 +10,5 @@ permissions:
 jobs:
   call-reusable-test:
     uses: ./.github/workflows/reusable-test.yml
+    secrets: inherit 
     
