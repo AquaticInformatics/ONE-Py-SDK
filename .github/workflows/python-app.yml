@@ -7,7 +7,7 @@ on:
   push:
   workflow_dispatch:
   schedule:
-    - cron: "22 14 * * 4"
+    - cron: "31 14 * * 4"
 
 permissions:
   contents: read
@@ -34,7 +34,8 @@ jobs:
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
       - name: Test
         run: |
-          python src/one_py_sdk/tests/sdkTests.py  ${{ secrets.RIO_USERNAME}} ${{secrets.RIO_PASSWORD}} >output.txt
+          echo "python src/one_py_sdk/tests/sdkTests.py  ${{ secrets.RIO_USERNAME}} ${{secrets.RIO_PASSWORD}} ">> $GITHUB_OUTPUT
+           
       - name: Email
         uses: dawidd6/action-send-mail@v3
         with:
@@ -45,7 +46,8 @@ jobs:
           from: aqidedwards@gmail.com
           to: daniel.edwards@aquaticinformatics.com
           subject: GitHub Actions Workflow
-          attachments: output.txt
+          
           body: |
             Workflow run on ${{ github.event_name }} for ${{ github.repository }}.
-            Test output is included in attachment output.txt.
+            ${{ env.KEY }}
+            
