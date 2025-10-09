@@ -35,7 +35,7 @@ jobs:
       - name: Test
         id: test
         run: |
-          python src/one_py_sdk/tests/sdkTests.py  ${{secrets.RIO_USERNAME}} ${{secrets.RIO_PASSWORD}} | tee output.txt
+          python src/one_py_sdk/tests/sdkTests.py  ${{secrets.RIO_USERNAME}} ${{secrets.RIO_PASSWORD}} > output.txt 2>&1
            
            
       - name: Email
