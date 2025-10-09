@@ -52,5 +52,5 @@ jobs:
           
           body: |
             Workflow run on ${{ github.event_name }} for ${{ github.repository }}.
-            ${{steps.test.
+            ${{steps.test.outputs.std_out}}
             
