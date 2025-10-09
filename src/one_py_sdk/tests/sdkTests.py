@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import unittest
 import csv
+import sys
 from one_py_sdk.clientsdk import ClientSdk
 from one_py_sdk.shared.constants import Environment as env
 from one_py_sdk.shared.models.datapoint import DataPoint
@@ -184,5 +185,7 @@ def suite():
 
 
 if __name__ == '__main__':
+    userName = sys.argv[1]
+    password = sys.argv[2]
     runner = unittest.TextTestRunner()
     runner.run(suite())
