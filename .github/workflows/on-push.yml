@@ -9,3 +9,4 @@ permissions:
 jobs:
   call-reusable-test:
     uses: ./.github/workflows/reusable-test.yml
+    secrets: inherit
