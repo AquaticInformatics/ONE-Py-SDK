@@ -33,8 +33,10 @@ jobs:
           # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
       - name: Test
+        id: test
         run: |
-          echo "python src/one_py_sdk/tests/sdkTests.py  ${{ secrets.RIO_USERNAME}} ${{secrets.RIO_PASSWORD}} ">> $GITHUB_OUTPUT
+          python src/one_py_sdk/tests/sdkTests.py  ${{secrets.RIO_USERNAME}} ${{secrets.RIO_PASSWORD}} | tee output.txt
+           
            
       - name: Email
         uses: dawidd6/action-send-mail@v3
@@ -45,9 +47,10 @@ jobs:
           password: ${{ secrets.SMTP_PASSWORD }}
           from: aqidedwards@gmail.com
           to: daniel.edwards@aquaticinformatics.com
+          attachments: output.txt
           subject: GitHub Actions Workflow
           
           body: |
             Workflow run on ${{ github.event_name }} for ${{ github.repository }}.
-            ${{ env.KEY }}
+            ${{steps.test.
             
