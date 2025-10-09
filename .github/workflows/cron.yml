@@ -1,0 +1,13 @@
+name: Scheduled test
+
+on:   
+  schedule:
+    - cron: "55 19 * * 4"
+
+permissions:
+  contents: read
+
+jobs:
+  call-reusable-test:
+    uses: ./.github/workflows/reusable-test.yml
+    
