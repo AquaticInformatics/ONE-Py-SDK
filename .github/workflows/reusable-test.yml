@@ -29,7 +29,7 @@ jobs:
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
       - name: Test        
         run: |
-          python src/one_py_sdk/tests/sdkTests.py  ${{secrets.RIO_USERNAME}} ${{secrets.RIO_PASSWORD}} 
+          python src/one_py_sdk/tests/sdkTests.py ${{secrets.RIO_USERNAME}} ${{secrets.RIO_PASSWORD}} 
            
            
       - name: Email
