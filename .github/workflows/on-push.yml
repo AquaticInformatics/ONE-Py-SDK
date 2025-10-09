@@ -1,4 +1,4 @@
-name: Scheduled test
+name: On Push
 
 on:   
   push:    
