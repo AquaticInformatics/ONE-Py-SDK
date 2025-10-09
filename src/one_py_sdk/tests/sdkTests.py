@@ -83,7 +83,7 @@ class TestExporter(unittest.TestCase):
         client.Exporter.ExportWorksheet(allWs, plantId, startDate, endDate)
         with open(allWs, 'r') as file:
             csvreader = csv.reader(file)
-            header = next(csvreader)  # Read the header row
+            next(csvreader)  # Read the header row
             count = 0
             for row in csvreader:
                 count += 1
@@ -94,7 +94,7 @@ class TestExporter(unittest.TestCase):
         client.Exporter.ExportColumnDetails(columnInfoDaily, plantId, 4)
         with open(columnInfoDaily, 'r') as file:
             csvreader = csv.reader(file)
-            header = next(csvreader)  # Read the header row
+            next(csvreader)  # Read the header row
             count = 0
             for row in csvreader:
                 count += 1
