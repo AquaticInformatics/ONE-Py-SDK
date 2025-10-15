@@ -18,6 +18,7 @@ class TestAuthenticationApi(unittest.TestCase):
         tokenResponse = client.Authentication.GetToken(userName, password)
         self.assertIsNotNone(tokenResponse)
         self.assertTrue("Bearer" in tokenResponse)
+        client.Authentication.LoginResourceOwner(userName, password)
 
 
 class TestSpreadsheetAPI(unittest.TestCase):
@@ -125,6 +126,7 @@ class TestExporter(unittest.TestCase):
 
 class TestCoreApi(unittest.TestCase):
     def test_GetUser(self):
+        client.Authentication.GetUserInfo()
         user = client.Core.GetUser(client.Authentication.User.id)
         self.assertEqual(user.userName, userName)
 
