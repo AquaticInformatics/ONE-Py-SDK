@@ -2,7 +2,7 @@ name: Scheduled test
 
 on:   
   schedule:
-    - cron: "5 * * * *"
+    - cron: "5 5 * * 5"
 
 permissions:
   contents: read
