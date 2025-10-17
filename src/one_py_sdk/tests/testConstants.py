@@ -1,0 +1,4 @@
+writePlantId = "0b9d88d8-9872-48cf-9a5f-ae755cad9acb"
+readPlantId = "0b9d88d8-9872-48cf-9a5f-ae755cad9acb"
+plantId = "0b9d88d8-9872-48cf-9a5f-ae755cad9acb"
+

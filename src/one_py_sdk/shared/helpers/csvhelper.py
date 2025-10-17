@@ -58,7 +58,8 @@ class Exporter:
                         self.__mapAndWriteRowsAndColumns(
                             worksheetWriter, plantId, wsType, startDate, endDate, updatedAfter)
                     except:
-                        logging.error(f"Export for ws type {self.ConvertWSTypeToStringValue(wsType)} ")
+                        logging.error(
+                            f"Export for ws type {self.ConvertWSTypeToStringValue(wsType)} ")
                         continue
             else:
                 self.__mapAndWriteRowsAndColumns(
@@ -72,16 +73,16 @@ class Exporter:
             endDate = endDate.replace(tzinfo=timezone.utc)
         try:
             ws = self.Spreadsheet.GetWorksheetDefinition(plantId, wsType)[0]
-        except:           
+        except:
             return
-        if not ws.columns:            
+        if not ws.columns:
             return
         rows = self.Spreadsheet.GetRowsForTimeRange(
             plantId, wsType, startDate, endDate)
         try:
             rowNumbers = rows.keys()
             rowValues = rows.values()
-        except(AttributeError):
+        except (AttributeError):
             return
         rowDict = {}
         for num in rowNumbers:
@@ -102,15 +103,16 @@ class Exporter:
                                     tzinfo=timezone.utc)
                             if dateEntered > updatedAfter:
                                 worksheetWriter.writerow({'Worksheet Type': wsVal,
-                                                        'Time': rowDict[vals.rowNumber], 'ColumnName': numberMapping[cell.columnNumber][0],
-                                                        'ColumnId': numberMapping[cell.columnNumber][1],
-                                                        'Value': cell.cellDatas[0].value.value,
-                                                        'RowNumber': vals.rowNumber,
-                                                        'StringValue': cell.cellDatas[0].stringValue.value,
-                                                        'DateEntered': cell.cellDatas[0].auditEvents[-1].timeStamp.jsonDateTime.value,
-                                                        'ChangedUsing': self.EnumDataSourceToStringValue(cell.cellDatas[0].auditEvents[-1].enumDataSource)})
-                        else: 
-                            logging.error(f"Audit info not found for Plant: {plantId},'Worksheet Type': {wsVal}, 'ColumnName':{numberMapping[cell.columnNumber][0]},'Time': {rowDict[vals.rowNumber]}, 'Value': {cell.cellDatas[0].value.value} ")
+                                                          'Time': rowDict[vals.rowNumber], 'ColumnName': numberMapping[cell.columnNumber][0],
+                                                          'ColumnId': numberMapping[cell.columnNumber][1],
+                                                          'Value': cell.cellDatas[0].value.value,
+                                                          'RowNumber': vals.rowNumber,
+                                                          'StringValue': cell.cellDatas[0].stringValue.value,
+                                                          'DateEntered': cell.cellDatas[0].auditEvents[-1].timeStamp.jsonDateTime.value,
+                                                          'ChangedUsing': self.EnumDataSourceToStringValue(cell.cellDatas[0].auditEvents[-1].enumDataSource)})
+                        else:
+                            logging.error(
+                                f"Audit info not found for Plant: {plantId},'Worksheet Type': {wsVal}, 'ColumnName':{numberMapping[cell.columnNumber][0]},'Time': {rowDict[vals.rowNumber]}, 'Value': {cell.cellDatas[0].value.value} ")
                     except (IndexError, KeyError):
                         pass
                     except TypeError:
@@ -138,7 +140,7 @@ class Exporter:
                                                   'StringValue': cell.cellDatas[0].stringValue.value,
                                                   'DateEntered': cell.cellDatas[0].auditEvents[-1].timeStamp.jsonDateTime.value,
                                                   'ChangedUsing': self.EnumDataSourceToStringValue(cell.cellDatas[0].auditEvents[-1].enumDataSource)})
-                    except(IndexError, KeyError):
+                    except (IndexError, KeyError):
                         pass
 
     def ExportWorksheetByType(self, filename, plantId, startDate, endDate, wsType=4, updatedAfter=None):
@@ -316,7 +318,7 @@ class Exporter:
         columnDict = {}
         for column in ws.columns:
             if (viewName != ""):
-                if(column.columnNumber in columnsInView):
+                if (column.columnNumber in columnsInView):
                     columnDict[column.columnNumber] = [column.name,  column.columnId, column.parameterId,  column.displayUnitId,
                                                        column.lastRowNumberWithData, column.locationId, column.limits, column.dataSourceBinding.bindingId]
             else:
@@ -425,7 +427,7 @@ class Exporter:
             try:
                 subTypeDict[subtype.id] = [subtype.i18NKeyName,
                                            i18NSubtypes[subtype.i18NKeyName]]
-            except(KeyError):
+            except (KeyError):
                 subTypeDict[subtype.id] = [
                     subtype.i18NKeyName, subtype.i18NKeyName]
 
@@ -511,8 +513,10 @@ class Exporter:
             return "Warning"
         elif limitEnum == 7:
             return "Goal"
+        elif limitEnum == 8:
+            return "Threshold"
         else:
-            return print("Enter valid worksheet type value (1-7)")
+            return print("Enter valid Limit type value (1-8)")
 
     def LimitOperationToStringValue(self, limitOperation):
         if limitOperation == 1:
@@ -548,7 +552,7 @@ class Exporter:
         else:
             return print(f"{enumDataSource}Enter valid enumDataSource (valid values are 0-7))")
 
-    def ParseAuditTime(self, dateEntered):       
-        dateEntered =datetime.strptime(dateEntered[:15], '%Y-%m-%dT%H:%M')
-        dateEntered = dateEntered.replace(tzinfo=timezone.utc)        
-        return dateEntered        
+    def ParseAuditTime(self, dateEntered):
+        dateEntered = datetime.strptime(dateEntered[:15], '%Y-%m-%dT%H:%M')
+        dateEntered = dateEntered.replace(tzinfo=timezone.utc)
+        return dateEntered

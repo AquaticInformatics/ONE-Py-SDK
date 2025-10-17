@@ -1,0 +1,12 @@
+name: On Push
+
+on:   
+  push:    
+
+permissions:
+  contents: read
+
+jobs:
+  call-reusable-test:
+    uses: ./.github/workflows/reusable-test.yml
+    secrets: inherit
