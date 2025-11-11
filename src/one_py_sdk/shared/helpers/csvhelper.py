@@ -456,16 +456,25 @@ class Exporter:
             long = twin.geography.point2d.x
             twinDict[twin.twinReferenceId.value] = [twin.parentTwinReferenceId.value,
                                                     twin.name.value, None, None, twin.twinTypeId, twin.twinSubTypeId.value, lat, long]
-
+        failedColumns = []
         for key in columnDict.keys():
             twinId = columnDict[key][1]
             path = []
             twinChain = []
             pathString = ""
+            success = False
             while (twinId != plantId):
-                path.append(twinDict[twinId][1])
-                twinChain.append(twinId)
-                twinId = twinDict[twinId][0]
+                try:
+                    path.append(twinDict[twinId][1])
+                    twinChain.append(twinId)
+                    twinId = twinDict[twinId][0]
+                    success = True
+                except KeyError as ke:
+                    print(f'{ke} twin not found omitting from report')
+                    break
+            if not success:
+                failedColumns.append(key)
+                continue
             path.append(twinDict[twinId][1])
             twinChain.append(plantId)
             for twinRef in twinChain:
@@ -484,6 +493,8 @@ class Exporter:
             while (path):
                 pathString = f'{pathString}/{path.pop()}'
             twinDict[columnDict[key][1]][2] = pathString
+        for failure in failedColumns:
+            columnDict.pop(failure, None)
         return twinDict
 
     def ConvertWSTypeToStringValue(self, wsType):
