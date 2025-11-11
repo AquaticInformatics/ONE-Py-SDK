@@ -14,7 +14,6 @@ endDate = datetime.now()
 twinTypeId = ""
 twinSubTypeId = ""
 
-
 class TestAuthenticationApi(unittest.TestCase):
     def test_getToken(self):
         tokenResponse = client.Authentication.GetToken(userName, password)
