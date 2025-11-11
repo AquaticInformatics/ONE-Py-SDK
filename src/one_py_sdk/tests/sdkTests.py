@@ -7,6 +7,7 @@ from one_py_sdk.shared.constants import Environment as env
 from one_py_sdk.shared.models.datapoint import DataPoint
 from testConstants import *
 from one_py_sdk.shared.constants import *
+
 client = ClientSdk(env.get('stage'))
 startDate = datetime.now()-timedelta(days=7)
 endDate = datetime.now()
@@ -31,12 +32,12 @@ class TestSpreadsheetAPI(unittest.TestCase):
         rowsForTimeRangeResponse = client.Spreadsheet.GetRowsForTimeRange(
             readPlantId, 4, startDate, endDate)
         self.assertIsNotNone(rowsForTimeRangeResponse)
-        countOfNotes =0
+        countOfNotes = 0
         for k in rowsForTimeRangeResponse:
             self.assertIsNotNone(
                 rowsForTimeRangeResponse[k].cells[0].cellDatas[0].value.value)
             if rowsForTimeRangeResponse[k].cells[0].notes is not None:
-                countOfNotes+=1
+                countOfNotes += 1
         self.assertGreaterEqual(countOfNotes, 1)
 
     def test_GetWorksheetDefinition(self):
