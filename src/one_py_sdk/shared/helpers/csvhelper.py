@@ -471,9 +471,10 @@ class Exporter:
                     success = True
                 except KeyError as ke:
                     print(f'{ke} twin not found omitting from report')
+                    success = False
                     break
             if not success:
-                failedColumns.append(key)
+                failedColumns.append(key)                
                 continue
             path.append(twinDict[twinId][1])
             twinChain.append(plantId)
