@@ -7,3 +7,4 @@ dist/*
 src/one_py_sdk.egg-info/*
 *.csv
 38/*
+*.txt
