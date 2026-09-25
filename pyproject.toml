@@ -7,7 +7,7 @@ version = "1.9.1"
 dependencies = [
     "requests",
     "protobuf==3.20.1", 
-    "one_interfaces",
+    "one_interfaces==7.13.0",
     "requests_cache",
     "pytz"
     ]
