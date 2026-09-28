@@ -1,4 +1,3 @@
-from imp import cache_from_source
 from requests import Session
 from datetime import time
 import json
@@ -13,9 +12,8 @@ from one_py_sdk.common.configuration import ConfigurationApi
 from one_py_sdk.common.activity import ActivityApi
 from one_py_sdk.shared.constants import *
 from one_py_sdk.enterprise.authentication import AuthenticationApi
-from one_py_sdk.operations.sample import SampleApi
 from one_py_sdk.shared.helpers.csvhelper import Exporter
-from one_py_sdk.historian.ingest import IngestApi
+
 
 
 class ClientSdk:
@@ -47,10 +45,7 @@ class ClientSdk:
             self.Environment, self.Authentication, self.Session)
         self.Activity = ActivityApi(
             self.Environment, self.Authentication, self.Session)
-        self.Sample = SampleApi(
-            self.Environment, self.Authentication, self.Session)
-        self.Ingest = IngestApi(
-            self.Environment, self.Authentication, self.Session)
+      
 
         if cacheTimeout != None:
             requests_cache.install_cache(
